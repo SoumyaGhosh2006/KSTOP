@@ -58,7 +58,7 @@ A terminal window will open at the bottom of VS Code. ✅
 In the terminal, type this command:
 
 ```bash
-git clone [COPY THE URL FROM GITHUB CODE BUTTON]
+git clone https://github.com/SoumyaGhosh2006/KSTOP.git
 cd KSTOP
 ```
 
