@@ -12,7 +12,7 @@ Make sure you have these installed:
 - **Git** → [git-scm.com](https://git-scm.com)
 - **VS Code** → [code.visualstudio.com](https://code.visualstudio.com)
 
-**Check if they're installed:**
+**Check if they're installed by opening vs code terminal and copy pasteing the commands below:**
 ```
 node -v
 npm -v
