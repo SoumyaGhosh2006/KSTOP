@@ -38,6 +38,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
 
           {/* Registration Forms */}
+          <Route path="/studentregister" element={<StudentRegister />} />
           <Route path="/register/student" element={<StudentRegister />} />
           <Route path="/register/mentor" element={<MentorRegister />} />
           <Route path="/register/parent" element={<ParentRegister />} />

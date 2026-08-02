@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const ROLES = [
   {
@@ -12,7 +12,7 @@ const ROLES = [
       </svg>
     ),
     description: "Apply for leave, track grievances, rate mess food",
-    route: "/register/student",
+    route: "/studentregister",
   },
   {
     id: "mentor",
@@ -56,218 +56,327 @@ const ROLES = [
 ];
 
 export default function Register() {
-  const [hovered, setHovered] = useState(null);
   const navigate = useNavigate();
+  const [pointer, setPointer] = useState({ x: 58, y: 48 });
+
+  function handlePointerMove(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setPointer({ x, y });
+  }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.gridOverlay} />
+    <div
+      className="register-page"
+      onPointerMove={handlePointerMove}
+      style={{
+        "--pointer-x": `${pointer.x}%`,
+        "--pointer-y": `${pointer.y}%`,
+        "--bg-x": `${50 + (pointer.x - 50) * 0.08}%`,
+        "--bg-y": `${50 + (pointer.y - 50) * 0.06}%`,
+      }}
+    >
+      <style>{registerStyles}</style>
 
-      <header style={styles.brand} aria-label="K-STOP">
-        <div style={styles.logoMark} aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="6" fill="#EB5E28" />
-            <text x="14" y="20" textAnchor="middle" fill="#FFFCF2" fontSize="14" fontWeight="700" fontFamily="'Space Grotesk', sans-serif">
-              K
-            </text>
-          </svg>
-        </div>
-        <span style={styles.wordmark}>K-STOP</span>
+      <div className="register-bg" />
+      <div className="register-pointer-light" />
+
+      <header className="register-brand" aria-label="K-STOP">
+        <div className="register-logo" aria-hidden="true">K</div>
+        <span>K-STOP</span>
       </header>
 
-      <main style={styles.container}>
-        <div style={styles.headingBlock}>
-          <h1 style={styles.heading}>Choose your role to continue.</h1>
-          <p style={styles.subheading}>
+      <main className="register-shell">
+        <section className="register-copy">
+          <span className="register-kicker">Campus access</span>
+          <h1>Choose your role to continue.</h1>
+          <p>
             Already have an account?{" "}
-            <a href="/login" style={styles.link}>
-              Log in
-            </a>
+            <Link to="/login">Log in</Link>
           </p>
-        </div>
+        </section>
 
-        <div style={styles.roleGrid}>
-          {ROLES.map((role) => {
-            const isHovered = hovered === role.id;
+        <section className="role-grid" aria-label="Choose registration role">
+          {ROLES.map((role) => (
+            <button
+              key={role.id}
+              type="button"
+              className="role-card"
+              onClick={() => navigate(role.route)}
+              aria-label={`Register as ${role.label}`}
+            >
+              <span className="role-icon" aria-hidden="true">
+                {role.icon}
+              </span>
+              <span className="role-title">{role.label}</span>
+              <span className="role-desc">{role.description}</span>
+              <span className="role-arrow" aria-hidden="true">&rarr;</span>
+            </button>
+          ))}
+        </section>
 
-            return (
-              <button
-                key={role.id}
-                style={{
-                  ...styles.roleCard,
-                  ...(isHovered ? styles.roleCardHover : {}),
-                }}
-                onMouseEnter={() => setHovered(role.id)}
-                onMouseLeave={() => setHovered(null)}
-                onClick={() => navigate(role.route)}
-              >
-                <div
-                  style={{
-                    ...styles.iconWrap,
-                    ...(isHovered ? styles.iconWrapHover : {}),
-                  }}
-                >
-                  {role.icon}
-                </div>
-                <div style={styles.roleLabel}>{role.label}</div>
-                <div style={styles.roleDesc}>{role.description}</div>
-                <div
-                  style={{
-                    ...styles.arrow,
-                    ...(isHovered ? styles.arrowHover : {}),
-                  }}
-                >
-                  &rarr;
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <p style={styles.footer}>KIIT University &middot; Student-Mentor-Hostel Management System</p>
+        <p className="register-footer">
+          KIIT University &middot; Student-Mentor-Hostel Management System
+        </p>
       </main>
     </div>
   );
 }
 
-const styles = {
-  page: {
-    minHeight: "100vh",
+const registerStyles = `
+  :root {
+    --kstop-paper: #FFFCF2;
+    --kstop-sand: #CCC5B9;
+    --kstop-ash: #403D39;
+    --kstop-ink: #252422;
+    --kstop-orange: #EB5E28;
+  }
+
+  .register-page {
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    padding: 6rem 7vw 3rem;
+    font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--kstop-ink);
+    background: var(--kstop-paper);
+  }
+
+  .register-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    background-image:
+      linear-gradient(90deg, rgba(255, 252, 242, 0.94) 0%, rgba(255, 252, 242, 0.8) 36%, rgba(255, 252, 242, 0.48) 100%),
+      url("/registerpc.png");
+    background-size: cover;
+    background-position: var(--bg-x) var(--bg-y);
+    transition: background-position 180ms ease-out;
+  }
+
+  .register-pointer-light {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
     background:
-      "radial-gradient(circle at 18% 16%, rgba(235, 94, 40, 0.16), transparent 28rem), linear-gradient(135deg, #252422 0%, #2e2b28 52%, #1f1e1c 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "5.25rem 1rem 2rem",
-    fontFamily: "'Space Grotesk', sans-serif",
-    position: "relative",
-    overflow: "hidden",
-  },
-  gridOverlay: {
-    position: "absolute",
-    inset: 0,
-    backgroundImage: `
-      linear-gradient(rgba(204,197,185,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(204,197,185,0.04) 1px, transparent 1px)
-    `,
-    backgroundSize: "48px 48px",
-    pointerEvents: "none",
-  },
-  brand: {
-    position: "absolute",
-    top: "1.25rem",
-    left: "1.25rem",
-    zIndex: 2,
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  logoMark: {
-    lineHeight: 0,
-  },
-  wordmark: {
-    color: "#FFFCF2",
-    fontSize: "1.05rem",
-    fontWeight: "700",
-    letterSpacing: "0.08em",
-  },
-  container: {
-    width: "100%",
-    maxWidth: "580px",
-    position: "relative",
-    zIndex: 1,
-  },
-  headingBlock: {
-    marginBottom: "2rem",
-  },
-  heading: {
-    color: "#FFFCF2",
-    fontSize: "clamp(2rem, 4vw, 3rem)",
-    fontWeight: "700",
-    margin: "0 0 0.5rem",
-    lineHeight: "1.08",
-    letterSpacing: "0",
-    maxWidth: "12ch",
-  },
-  subheading: {
-    color: "#CCC5B9",
-    fontSize: "0.95rem",
-    margin: 0,
-  },
-  link: {
-    color: "#EB5E28",
-    textDecoration: "none",
-    fontWeight: "600",
-  },
-  roleGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-    marginBottom: "2rem",
-  },
-  roleCard: {
-    background: "rgba(64, 61, 57, 0.92)",
-    border: "1px solid rgba(204,197,185,0.14)",
-    borderRadius: "12px",
-    padding: "1.25rem",
-    textAlign: "left",
-    cursor: "pointer",
-    transition: "border-color 0.18s, background 0.18s, transform 0.18s",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    position: "relative",
-    outline: "none",
-  },
-  roleCardHover: {
-    background: "#4a4643",
-    borderColor: "#EB5E28",
-    transform: "translateY(-2px)",
-  },
-  iconWrap: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "8px",
-    background: "rgba(235,94,40,0.12)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#EB5E28",
-    transition: "background 0.18s",
-    marginBottom: "4px",
-  },
-  iconWrapHover: {
-    background: "rgba(235,94,40,0.22)",
-  },
-  roleLabel: {
-    color: "#FFFCF2",
-    fontSize: "1rem",
-    fontWeight: "700",
-    letterSpacing: "0",
-  },
-  roleDesc: {
-    color: "#CCC5B9",
-    fontSize: "0.82rem",
-    lineHeight: "1.5",
-    fontWeight: "400",
-  },
-  arrow: {
-    color: "#CCC5B9",
-    fontSize: "16px",
-    marginTop: "4px",
-    transition: "color 0.18s, transform 0.18s",
-    display: "inline-block",
-    alignSelf: "flex-start",
-  },
-  arrowHover: {
-    color: "#EB5E28",
-    transform: "translateX(3px)",
-  },
-  footer: {
-    color: "#CCC5B9",
-    fontSize: "0.78rem",
-    textAlign: "center",
-    opacity: 0.68,
-    margin: 0,
-  },
-};
+      radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(235, 94, 40, 0.16), rgba(235, 94, 40, 0.04) 13rem, transparent 25rem);
+    mix-blend-mode: multiply;
+  }
+
+  .register-brand {
+    position: absolute;
+    top: 1.35rem;
+    left: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 2;
+    color: var(--kstop-ink);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .register-logo {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--kstop-orange);
+    color: var(--kstop-paper);
+    box-shadow: 0 12px 24px rgba(235, 94, 40, 0.22);
+  }
+
+  .register-shell {
+    width: min(100%, 740px);
+    position: relative;
+    z-index: 1;
+  }
+
+  .register-copy {
+    max-width: 520px;
+    margin-bottom: 1.7rem;
+  }
+
+  .register-kicker {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0 0.75rem;
+    border: 1px solid rgba(64, 61, 57, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 252, 242, 0.72);
+    color: var(--kstop-orange);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .register-copy h1 {
+    margin: 0.75rem 0 0.5rem;
+    color: var(--kstop-ink);
+    font-size: 3rem;
+    line-height: 1.05;
+    letter-spacing: 0;
+    max-width: 11ch;
+    text-wrap: balance;
+  }
+
+  .register-copy p {
+    margin: 0;
+    color: var(--kstop-ash);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .register-copy a {
+    color: var(--kstop-orange);
+    text-decoration: none;
+    font-weight: 800;
+  }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .role-card {
+    min-height: 172px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 1.15rem;
+    border: 1px solid rgba(64, 61, 57, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 252, 242, 0.82);
+    color: var(--kstop-ink);
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 18px 45px rgba(37, 36, 34, 0.09);
+    backdrop-filter: blur(12px);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  }
+
+  .role-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border-top: 3px solid transparent;
+    pointer-events: none;
+    transition: border-color 180ms ease;
+  }
+
+  .role-card:hover,
+  .role-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: rgba(235, 94, 40, 0.58);
+    background: rgba(255, 252, 242, 0.96);
+    box-shadow: 0 24px 55px rgba(37, 36, 34, 0.16);
+    outline: none;
+  }
+
+  .role-card:hover::after,
+  .role-card:focus-visible::after {
+    border-top-color: var(--kstop-orange);
+  }
+
+  .role-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(235, 94, 40, 0.12);
+    color: var(--kstop-orange);
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  }
+
+  .role-card:hover .role-icon,
+  .role-card:focus-visible .role-icon {
+    background: var(--kstop-orange);
+    color: var(--kstop-paper);
+    transform: translateY(-1px);
+  }
+
+  .role-title {
+    color: var(--kstop-ink);
+    font-size: 1.05rem;
+    font-weight: 850;
+    letter-spacing: 0;
+  }
+
+  .role-desc {
+    color: var(--kstop-ash);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  .role-arrow {
+    margin-top: auto;
+    color: var(--kstop-orange);
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: transform 180ms ease;
+  }
+
+  .role-card:hover .role-arrow,
+  .role-card:focus-visible .role-arrow {
+    transform: translateX(4px);
+  }
+
+  .register-footer {
+    color: rgba(64, 61, 57, 0.68);
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  @media (max-width: 760px) {
+    .register-page {
+      align-items: flex-start;
+      padding: 5.5rem 1rem 2rem;
+    }
+
+    .register-bg {
+      background-image:
+        linear-gradient(180deg, rgba(255, 252, 242, 0.94) 0%, rgba(255, 252, 242, 0.82) 48%, rgba(255, 252, 242, 0.7) 100%),
+        url("/registermobile.png");
+      background-position: center top;
+    }
+
+    .register-brand {
+      left: 1rem;
+      top: 1rem;
+    }
+
+    .register-copy {
+      margin-bottom: 1.25rem;
+    }
+
+    .register-copy h1 {
+      font-size: 2.25rem;
+      max-width: 12ch;
+    }
+
+    .role-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .role-card {
+      min-height: 148px;
+    }
+  }
+`;

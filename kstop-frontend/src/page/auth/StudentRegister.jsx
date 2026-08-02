@@ -14,6 +14,7 @@ const GENDERS = ["Select gender", "Male", "Female", "Prefer not to say"];
 
 export default function StudentRegister() {
   const navigate = useNavigate();
+  const [pointer, setPointer] = useState({ x: 58, y: 42 });
   const [form, setForm] = useState({
     email: "",
     rollNumber: "",
@@ -28,6 +29,13 @@ export default function StudentRegister() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  function handlePointerMove(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setPointer({ x, y });
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -73,8 +81,19 @@ export default function StudentRegister() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.gridOverlay} />
+    <div
+      style={{
+        ...styles.page,
+        "--pointer-x": `${pointer.x}%`,
+        "--pointer-y": `${pointer.y}%`,
+        "--bg-x": `${50 + (pointer.x - 50) * 0.08}%`,
+        "--bg-y": `${50 + (pointer.y - 50) * 0.06}%`,
+      }}
+      onPointerMove={handlePointerMove}
+    >
+      <style>{studentRegisterMediaStyles}</style>
+      <div className="student-register-bg" style={styles.background} />
+      <div style={styles.pointerLight} />
 
       <div style={styles.container}>
         {/* Back + brand */}
@@ -272,7 +291,7 @@ function SelectField({ label, name, value, onChange, options, error }) {
           style={{
             ...fieldStyles.select,
             ...(error ? fieldStyles.inputError : {}),
-            color: value && value !== options[0] ? "#FFFCF2" : "#888780",
+            color: value && value !== options[0] ? "#252422" : "#77716a",
           }}
         >
           {options.map((opt) => (
@@ -281,7 +300,7 @@ function SelectField({ label, name, value, onChange, options, error }) {
             </option>
           ))}
         </select>
-        <svg style={fieldStyles.selectArrow} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCC5B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg style={fieldStyles.selectArrow} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#403D39" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
@@ -312,13 +331,13 @@ function PasswordField({ label, name, value, onChange, error, show, onToggle, pl
         />
         <button type="button" onClick={onToggle} style={fieldStyles.eyeBtn} tabIndex={-1}>
           {show ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CCC5B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#403D39" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
               <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
               <line x1="1" y1="1" x2="23" y2="23"/>
             </svg>
           ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CCC5B9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#403D39" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -353,30 +372,46 @@ function Spinner() {
 const styles = {
   page: {
     minHeight: "100vh",
-    backgroundColor: "#252422",
+    backgroundColor: "#FFFCF2",
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "center",
     padding: "2.5rem 1rem 3rem",
     fontFamily: "'Space Grotesk', sans-serif",
     position: "relative",
-    overflow: "hidden",
+    overflowX: "hidden",
+    isolation: "isolate",
   },
-  gridOverlay: {
+  background: {
     position: "absolute",
     inset: 0,
-    backgroundImage: `
-      linear-gradient(rgba(204,197,185,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(204,197,185,0.04) 1px, transparent 1px)
-    `,
-    backgroundSize: "48px 48px",
+    zIndex: -3,
+    backgroundImage:
+      "linear-gradient(90deg, rgba(255,252,242,0.94) 0%, rgba(255,252,242,0.82) 42%, rgba(255,252,242,0.56) 100%), url('/registerpc.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "var(--bg-x) var(--bg-y)",
+    transition: "background-position 180ms ease-out",
+  },
+  pointerLight: {
+    position: "absolute",
+    inset: 0,
+    zIndex: -2,
+    background:
+      "radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(235,94,40,0.16), rgba(235,94,40,0.04) 13rem, transparent 25rem)",
+    mixBlendMode: "multiply",
     pointerEvents: "none",
   },
   container: {
     width: "100%",
-    maxWidth: "560px",
+    maxWidth: "600px",
     position: "relative",
     zIndex: 1,
+    background: "rgba(255,252,242,0.84)",
+    border: "1px solid rgba(64,61,57,0.14)",
+    borderRadius: "8px",
+    boxShadow: "0 24px 60px rgba(37,36,34,0.13)",
+    backdropFilter: "blur(14px)",
+    padding: "1.4rem",
   },
   topBar: {
     display: "flex",
@@ -390,7 +425,7 @@ const styles = {
     gap: "6px",
     background: "transparent",
     border: "none",
-    color: "#CCC5B9",
+    color: "#403D39",
     fontSize: "14px",
     cursor: "pointer",
     padding: "4px 0",
@@ -404,7 +439,7 @@ const styles = {
   },
   logoMark: { lineHeight: 0 },
   wordmark: {
-    color: "#FFFCF2",
+    color: "#252422",
     fontSize: "16px",
     fontWeight: "700",
     letterSpacing: "0.06em",
@@ -426,7 +461,7 @@ const styles = {
     letterSpacing: "0.02em",
   },
   heading: {
-    color: "#FFFCF2",
+    color: "#252422",
     fontSize: "24px",
     fontWeight: "600",
     margin: "0 0 0.4rem",
@@ -434,7 +469,7 @@ const styles = {
     lineHeight: "1.3",
   },
   subheading: {
-    color: "#CCC5B9",
+    color: "#403D39",
     fontSize: "14px",
     margin: 0,
   },
@@ -479,10 +514,10 @@ const styles = {
     gap: "8px",
   },
   footer: {
-    color: "#CCC5B9",
+    color: "rgba(64,61,57,0.68)",
     fontSize: "12px",
     textAlign: "center",
-    opacity: 0.5,
+    opacity: 1,
     marginTop: "2rem",
   },
 };
@@ -494,7 +529,7 @@ const fieldStyles = {
     gap: "5px",
   },
   label: {
-    color: "#CCC5B9",
+    color: "#403D39",
     fontSize: "13px",
     fontWeight: "500",
     letterSpacing: "0.01em",
@@ -502,10 +537,10 @@ const fieldStyles = {
   input: {
     width: "100%",
     height: "42px",
-    backgroundColor: "#403D39",
-    border: "1px solid rgba(204,197,185,0.18)",
+    backgroundColor: "rgba(255,252,242,0.9)",
+    border: "1px solid rgba(64,61,57,0.18)",
     borderRadius: "8px",
-    color: "#FFFCF2",
+    color: "#252422",
     fontSize: "14px",
     padding: "0 12px",
     fontFamily: "'Space Grotesk', sans-serif",
@@ -517,7 +552,7 @@ const fieldStyles = {
     borderColor: "#E24B4A",
   },
   hint: {
-    color: "#888780",
+    color: "#77716a",
     fontSize: "11px",
   },
   error: {
@@ -531,8 +566,8 @@ const fieldStyles = {
   select: {
     width: "100%",
     height: "42px",
-    backgroundColor: "#403D39",
-    border: "1px solid rgba(204,197,185,0.18)",
+    backgroundColor: "rgba(255,252,242,0.9)",
+    border: "1px solid rgba(64,61,57,0.18)",
     borderRadius: "8px",
     fontSize: "14px",
     padding: "0 36px 0 12px",
@@ -565,3 +600,14 @@ const fieldStyles = {
     alignItems: "center",
   },
 };
+
+const studentRegisterMediaStyles = `
+  @media (max-width: 760px) {
+    .student-register-bg {
+      background-image:
+        linear-gradient(180deg, rgba(255,252,242,0.94) 0%, rgba(255,252,242,0.82) 48%, rgba(255,252,242,0.72) 100%),
+        url("/registermobile.png") !important;
+      background-position: center top !important;
+    }
+  }
+`;
