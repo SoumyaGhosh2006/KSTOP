@@ -1,11 +1,4 @@
-// Root component + React Router
-
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
 // Auth Pages
@@ -35,23 +28,23 @@ export default function App() {
       <AuthProvider>
         <Routes>
           {/* ──── Auth Routes ──── */}
-
+          
           {/* Role Selection */}
           <Route path="/register" element={<Register />} />
-
+          
           {/* Registration Forms */}
           <Route path="/register/student" element={<StudentRegister />} />
           <Route path="/register/mentor" element={<MentorRegister />} />
           <Route path="/register/parent" element={<ParentRegister />} />
           <Route path="/register/hostel" element={<HostelRegister />} />
-
+          
           {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ──── Protected Dashboard Routes ──── */}
-
+          
           {/* Student Dashboard & Pages */}
           <Route path="/dashboard/student" element={<StudentDashboard />} />
           {/* <Route path="/dashboard/student/leaves" element={<StudentLeaveQueue />} /> */}
@@ -73,19 +66,13 @@ export default function App() {
           {/* <Route path="/dashboard/hostel/feedback" element={<HostelFeedback />} /> */}
 
           {/* ──── Shared Routes ──── */}
-          <Route
-            path="/notifications"
-            element={<div>Notifications Page (TODO)</div>}
-          />
+          <Route path="/notifications" element={<div>Notifications Page (TODO)</div>} />
 
           {/* ──── Default Route ──── */}
           <Route path="/" element={<Navigate to="/register" replace />} />
-
+          
           {/* 404 Fallback */}
-          <Route
-            path="*"
-            element={<div style={styles.notFound}>Page not found</div>}
-          />
+          <Route path="*" element={<div style={styles.notFound}>Page not found</div>} />
         </Routes>
       </AuthProvider>
     </Router>
