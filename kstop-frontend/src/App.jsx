@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider } from "./context/AuthContext";
 
 // Auth Pages
-import Register from "./page/auth/Register";
+import Register from "./page/Register";
 import StudentRegister from "./page/auth/StudentRegister";
 import MentorRegister from "./page/auth/MentorRegister";
 import ParentRegister from "./page/auth/ParentRegister";
