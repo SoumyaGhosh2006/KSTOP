@@ -99,6 +99,11 @@ In the same terminal, type:
 cd kstop-backend
 npm install
 ```
+Prisma 7 needs a separate PostgreSQL adapter. Run this:
+
+```bash
+npm install @prisma/adapter-pg
+```
 
 Wait for it to finish (1-2 minutes). Then:
 
