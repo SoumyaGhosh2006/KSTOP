@@ -140,6 +140,7 @@ const registerStyles = `
     isolation: isolate;
     display: flex;
     align-items: center;
+    justify-content: center;
     padding: 6rem 7vw 3rem;
     font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--kstop-ink);
@@ -194,14 +195,16 @@ const registerStyles = `
   }
 
   .register-shell {
-    width: min(100%, 740px);
+    width: min(100%, 820px);
     position: relative;
     z-index: 1;
+    margin-inline: auto;
   }
 
   .register-copy {
-    max-width: 520px;
+    max-width: 100%;
     margin-bottom: 1.7rem;
+    text-align: center;
   }
 
   .register-kicker {
@@ -224,7 +227,8 @@ const registerStyles = `
     font-size: 3rem;
     line-height: 1.05;
     letter-spacing: 0;
-    max-width: 11ch;
+    max-width: 12ch;
+    margin-inline: auto;
     text-wrap: balance;
   }
 
@@ -246,6 +250,7 @@ const registerStyles = `
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem;
     margin-bottom: 1.6rem;
+    justify-content: center;
   }
 
   .role-card {
@@ -341,11 +346,13 @@ const registerStyles = `
     font-size: 0.8rem;
     font-weight: 700;
     margin: 0;
+    text-align: center;
   }
 
   @media (max-width: 760px) {
     .register-page {
       align-items: flex-start;
+      justify-content: flex-start;
       padding: 5.5rem 1rem 2rem;
     }
 
