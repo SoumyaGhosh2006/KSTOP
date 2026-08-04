@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+// Each role card drives both the UI content and navigation target.
 const ROLES = [
   {
     id: "student",
@@ -57,8 +58,11 @@ const ROLES = [
 
 export default function Register() {
   const navigate = useNavigate();
+
+  // Pointer state is used to move the background glow for a richer UI feel.
   const [pointer, setPointer] = useState({ x: 58, y: 48 });
 
+  // Convert pointer position into percentage values for CSS variables.
   function handlePointerMove(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -79,15 +83,18 @@ export default function Register() {
     >
       <style>{registerStyles}</style>
 
+      {/* Background image layer + glow layer */}
       <div className="register-bg" />
       <div className="register-pointer-light" />
 
+      {/* Fixed app branding */}
       <header className="register-brand" aria-label="K-STOP">
         <div className="register-logo" aria-hidden="true">K</div>
         <span>K-STOP</span>
       </header>
 
       <main className="register-shell">
+        {/* Intro copy for role selection */}
         <section className="register-copy">
           <span className="register-kicker">Campus access</span>
           <h1>Choose your role to continue.</h1>
@@ -97,6 +104,7 @@ export default function Register() {
           </p>
         </section>
 
+        {/* Main role selection grid */}
         <section className="role-grid" aria-label="Choose registration role">
           {ROLES.map((role) => (
             <button
@@ -125,6 +133,7 @@ export default function Register() {
 }
 
 const registerStyles = `
+  /* Theme tokens used across this page */
   :root {
     --kstop-paper: #FFFCF2;
     --kstop-sand: #CCC5B9;
@@ -160,6 +169,7 @@ const registerStyles = `
   }
 
   .register-pointer-light {
+    /* Glow follows pointer location via CSS variables from React state */
     position: absolute;
     inset: 0;
     z-index: -2;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// School options for mentor profile mapping.
 const SCHOOLS = [
   "Select school",
   "School of Computer Engineering",
@@ -18,7 +19,11 @@ const MENTEE_SEX = ["Select sex of mentees", "Male", "Female"];
 
 export default function MentorRegister() {
   const navigate = useNavigate();
+
+  // Pointer values control the dynamic background glow.
   const [pointer, setPointer] = useState({ x: 58, y: 42 });
+
+  // Mentor registration fields in one state object.
   const [form, setForm] = useState({
     name: "",
     employeeId: "",
@@ -36,6 +41,7 @@ export default function MentorRegister() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Track pointer location in percentages for smooth visual movement.
   function handlePointerMove(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -46,9 +52,11 @@ export default function MentorRegister() {
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Remove only the active field error while the user is editing.
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
+  // Validate mentor input before sending request to backend.
   function validate() {
     const errs = {};
     if (!form.name) errs.name = "Full name is required.";
@@ -63,6 +71,7 @@ export default function MentorRegister() {
       errs.menteeRollEnd = "Ending roll number is required.";
     else if (!/^\d+$/.test(form.menteeRollEnd))
       errs.menteeRollEnd = "Enter a valid roll number.";
+    // Roll-end cannot be smaller than roll-start.
     if (
       /^\d+$/.test(form.menteeRollStart) &&
       /^\d+$/.test(form.menteeRollEnd) &&
@@ -89,11 +98,15 @@ export default function MentorRegister() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // Stop and show errors if any field is invalid.
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
+
+    // Temporary submit simulation until registration API is integrated.
     setLoading(true);
     // TODO: POST /auth/register with form data
     // const res = await api.post("/auth/register", { ...form, role: "mentor" });
@@ -153,7 +166,9 @@ export default function MentorRegister() {
           </p>
         </div>
 
+        {/* Mentor registration form */}
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
+          {/* Mentor identity details */}
           <div style={styles.row}>
             <Field
               label="Full name"
@@ -175,6 +190,7 @@ export default function MentorRegister() {
             />
           </div>
 
+          {/* Academic unit selection */}
           <SelectField
             label="School"
             name="school"
@@ -184,6 +200,7 @@ export default function MentorRegister() {
             error={errors.school}
           />
 
+          {/* Mentee roll range mapped to this mentor */}
           <div style={styles.row}>
             <Field
               label="Mentee roll starts"
@@ -205,6 +222,7 @@ export default function MentorRegister() {
             />
           </div>
 
+          {/* Used to map hostel and mentee groups in some flows */}
           <SelectField
             label="Sex of mentees"
             name="menteeSex"
@@ -236,6 +254,7 @@ export default function MentorRegister() {
             hint="Used for urgent leave and grievance notifications"
           />
 
+          {/* Password setup */}
           <div style={styles.row}>
             <PasswordField
               label="Password"
