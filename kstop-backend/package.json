@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
@@ -13,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.9.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
@@ -26,7 +25,8 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@prisma/client": "^6.7.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.9.1"
+    "prisma": "^6.7.0"
   }
 }

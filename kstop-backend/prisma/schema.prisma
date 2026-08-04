@@ -1,13 +1,332 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// ─────────────────────────────────────────────────────────────
+//  K-STOP — Prisma Schema
+//  prisma/schema.prisma
+//
+//  This file defines your entire database structure.
+//  Every model = one table in PostgreSQL.
+//
+//  After editing this file, always run:
+//    npx prisma migrate dev --name <describe-what-changed>
+//  That command pushes the changes to your real database.
+// ─────────────────────────────────────────────────────────────
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ENUMS
+//  Enums are like a fixed dropdown — only these exact values
+//  are allowed in those columns. Postgres enforces this.
+
+enum Role {
+  student
+  mentor
+  hostel   
+  parent
+}
+
+
+enum Gender {
+  Male
+  Female
+  PreferNotToSay
+}
+
+
+enum LeaveStatus {
+  PENDING_PARENT   // waiting for parent to approve first
+  PENDING_MENTOR   // parent approved, now waiting for mentor
+  APPROVED         // mentor approved — QR will be generated
+  REJECTED         // rejected by either parent or mentor
+}
+
+enum LeaveType {
+  Medical
+  Vacation
+  FamilyEmergency
+  Other
+}
+
+
+// WHY TWO STATUSES?
+// A single status field can be manipulated by hostel staff —
+// they could mark "Resolved" without actually fixing anything.
+// by taking response from both sides independently, mentors and parents
+// can see if staff resolved it but the student disagrees.
+// Both must agree before it shows as truly resolved everywhere.
+
+// hostel side issue update 
+enum StaffGrievanceStatus {
+  OPEN         // not looked at yet
+  IN_PROGRESS  // staff is working on it
+  RESOLVED     // staff says they fixed it
+}
+
+// student side issue update 
+// Student only gets prompted to respond once staff marks RESOLVED
+enum StudentGrievanceStatus {
+  PENDING    // student hasn't responded yet (default)
+  CONFIRMED  // student agrees — issue is genuinely fixed
+  DISPUTED   // student says it is NOT actually fixed
+}
+
+// Category of hostel complaint 
+// These also serve as base priority scores for NLP ranker —
+enum GrievanceCategory {
+  Water        // base score 70 — health/safety critical
+  Electrical   // base score 75 — safety critical
+  Plumbing     // base score 60
+  Transport    // base score 50
+  Internet     // base score 45
+  Cleaning     // base score 40
+  Food         // base score 55
+  Other        // base score 30
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: User
+// ─────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())  // unique ID e.g. "clx2abc123"
+  email     String   @unique               // must be @kiit.ac.in, enforced in code
+  password  String                         // bcrypt hash — NEVER plain text
+  name      String
+  role      Role                           // student | mentor | hostel | parent
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Student-only fields ──
+  // null for mentor/hostel/parent acc
+  rollNumber String?  // e.g. "22053XXX"
+  hostelId   String?  // which hostel this student lives in → Hostel.id
+  gender     Gender?
+  mentorName String?  // assigned mentor's name (plain text for now)
+
+  // ── Hostel staff fields ──
+  // null for student/mentor/parent acc
+  // any staff member linked to a hostel has full equal access 
+  // upload menu, update grievances, view complaints
+  assignedHostelId String?  // which hostel this staff member manages
+
+  // ── Relations ────────────────────────────────────────────
+
+  hostel              Hostel?              @relation("StudentHostel", fields: [hostelId],         references: [id])
+  assignedHostel      Hostel?              @relation("HostelStaff",   fields: [assignedHostelId], references: [id])
+  leavesAsStudent     Leave[]              @relation("StudentLeaves")
+  leavesAsMentor      Leave[]              @relation("MentorLeaves")
+  grievancesAsStudent Grievance[]          @relation("StudentGrievances")
+  grievancesAsMentor  Grievance[]          @relation("MentorGrievances")
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
+  foodRatings         FoodRating[]
+  sentAnnouncements   Announcement[]
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: Hostel
+// ─────────────────────────────────────────────────────────────
+model Hostel {
+  id        String   @id @default(cuid())
+  name      String   @unique  // e.g. "HS-5", "HN-2", "KIIT Nagar"
+  createdAt DateTime @default(now())
+
+  // Relations
+  students    User[]      @relation("StudentHostel")  // students living here
+  hostelStaff User[]      @relation("HostelStaff")    // staff managing this hostel 
+  grievances  Grievance[]                             // complaints filed from this hostel
+  messMenus   MessMenu[]                              // menu uploads for this hostel
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: Leave
+// ─────────────────────────────────────────────────────────────
+model Leave {
+  id             String    @id @default(cuid())
+  studentId      String    // which student made this request
+  mentorId       String    // which mentor needs to approve it
+  type           LeaveType
+  startDate      DateTime
+  endDate        DateTime
+  purpose        String
+  place          String   
+  contactNumber  String    
+  arrivalDetails String?   
+
+  // approval tracking — both must be true before QR is generated
+  parentApproved  Boolean     @default(false)
+  mentorApproved  Boolean     @default(false)
+  status          LeaveStatus @default(PENDING_PARENT)
+  rejectionReason String?     // set when status = REJECTED
+
+  // QR gate pass — only exists after full approval
+  // qrToken is stored in DB so guard's scan can verify it server-side
+  qrToken String?  // unique random hex token tied to this leave
+  qrCode  String?  // base64 QR image sent to frontend for display
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student User @relation("StudentLeaves", fields: [studentId], references: [id])
+  mentor  User @relation("MentorLeaves",  fields: [mentorId],  references: [id])
+
+  @@index([studentId])  // fast "get my leaves" queries
+  @@index([mentorId])   // fast mentor leave queue queries
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: Grievance
+
+//  DUAL CONFIRMATION SYSTEM:
+//  staffStatus  — updated by hostel staff
+//  studentStatus — updated by student after staff marks resolved
+//
+//  What mentor/parent sees based on both values:
+//  RESOLVED + CONFIRMED  →  Fully Resolved
+//  RESOLVED + DISPUTED   →  Disputed (staff resolved, student disagrees)
+//  RESOLVED + PENDING    →  Awaiting student confirmation
+//  IN_PROGRESS + PENDING →  In Progress
+//  OPEN + PENDING        →  Open
+
+//  PRIORITY SCORE:
+//  Calculated by lib/nlp/grievanceRanker.js on submission.
+//  Score 0–100 based on category base + keywords in description.
+//  Disputed grievances are always shown first on mentor dashboard
+//  regardless of score, then remaining sorted by priorityScore DESC.
+// ─────────────────────────────────────────────────────────────
+model Grievance {
+  id          String            @id @default(cuid())
+  studentId   String
+  hostelId    String            // which hostel this complaint belongs to
+  mentorId    String            // mentor linked to this student
+  title       String
+  description String            // NLP ranker will read this text on submission
+  category    GrievanceCategory
+
+  // ── Dual confirmation status ─────────────────────────────
+  staffStatus   StaffGrievanceStatus   @default(OPEN)
+  studentStatus StudentGrievanceStatus @default(PENDING)
+
+  // ── NLP priority score ───────────────────────────────────
+  // Set once on submission by grievanceRanker.js
+  // Higher = more urgent = appears higher on mentor dashboard
+  priorityScore Int @default(0)
+
+  // Timestamps
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  staffResolvedAt    DateTime? // when staff clicked "Resolved"
+  studentRespondedAt DateTime? // when student confirmed or disputed
+
+  // Relations
+  student User   @relation("StudentGrievances", fields: [studentId], references: [id])
+  mentor  User   @relation("MentorGrievances",  fields: [mentorId],  references: [id])
+  hostel  Hostel @relation(fields: [hostelId], references: [id])
+
+  @@index([hostelId])     // fast hostel staff view
+  @@index([studentId])    // fast student "my grievances" view
+  @@index([priorityScore]) // fast sorted mentor dashboard query
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: MessMenu
+//  Students see only the latest menu for their own hostel.can view any hostel's menu (read-only)
+//  Any staff member linked to the hostel can upload
+// ─────────────────────────────────────────────────────────────
+model MessMenu {
+  id         String   @id @default(cuid())
+  hostelId   String
+  imageUrl   String   // Cloudinary CDN URL — not the raw image
+  uploadedBy String   // userId of the staff member who uploaded it
+  createdAt  DateTime @default(now())
+
+  // Relations
+  hostel      Hostel       @relation(fields: [hostelId], references: [id])
+  foodRatings FoodRating[]
+
+  @@index([hostelId])  
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: FoodRating
+//  a student can only rate each item once per menu upload.
+//  Hostel staff sees average ratings per item on their dashboard.
+// ─────────────────────────────────────────────────────────────
+model FoodRating {
+  id        String   @id @default(cuid())
+  menuId    String
+  studentId String
+  foodItem  String   // e.g. "Dal", "Rice", "Chicken Curry"
+  rating    Int      // 1 to 5 stars
+  comment   String?  // optional written feedback
+  createdAt DateTime @default(now())
+
+  // Relations
+  menu    MessMenu @relation(fields: [menuId],    references: [id])
+  student User     @relation(fields: [studentId], references: [id])
+
+  // One rating per food item per student per menu — no duplicates
+  @@unique([menuId, studentId, foodItem])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: Notification
+//  Socket.io also emits them live when the user is online.
+//  Examples of types:
+//  "leave-approved"     → student notified
+//  "leave-rejected"     → student notified
+//  "leave-submitted"    → mentor notified
+//  "grievance-resolved" → student notified (prompted to confirm/dispute)
+//  "grievance-disputed" → appears on mentor dashboard
+// ─────────────────────────────────────────────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   // who receives this notification
+  type      String   // event type string 
+  message   String  
+  relatedId String?  // ID of the leave or grievance
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])  
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: PasswordResetToken
+// ─────────────────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique  // random hex
+  expiresAt DateTime           // 15 minutes from when it was created
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: Announcement
+//
+//  Mentor broadcasts a message to all their mentees at once.
+//  Stored here permanently so mentees can scroll back and read it.
+//  Also emitted via Socket.io to all online mentees in real-time.
+// ─────────────────────────────────────────────────────────────
+model Announcement {
+  id        String   @id @default(cuid())
+  mentorId  String
+  message   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  mentor User @relation(fields: [mentorId], references: [id])
 }
