@@ -380,8 +380,8 @@ const styles = {
     position: "absolute",
     inset: 0,
     zIndex: -2,
-     backgroundImage: "url('/registerpc.png')",
-    
+    background:
+      "radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(235,94,40,0.16), rgba(235,94,40,0.04) 13rem, transparent 25rem)",
     mixBlendMode: "multiply",
     pointerEvents: "none",
   },
