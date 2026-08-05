@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Hostel options shown in the student registration dropdown.
 const HOSTELS = [
   "Select your hostel",
   "HS-1", "HS-2", "HS-3", "HS-4", "HS-5",
@@ -14,7 +15,11 @@ const GENDERS = ["Select gender", "Male", "Female", "Prefer not to say"];
 
 export default function StudentRegister() {
   const navigate = useNavigate();
+
+  // Pointer coordinates drive the background light movement effect.
   const [pointer, setPointer] = useState({ x: 58, y: 42 });
+
+  // Student form state grouped in one object.
   const [form, setForm] = useState({
     email: "",
     rollNumber: "",
@@ -30,6 +35,7 @@ export default function StudentRegister() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Convert pointer location to percentages for CSS custom properties.
   function handlePointerMove(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -40,9 +46,11 @@ export default function StudentRegister() {
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Remove only the current field's error while typing.
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
+  // Basic client-side checks so obvious mistakes are caught early.
   function validate() {
     const errs = {};
     if (!form.email) errs.email = "Email is required.";
@@ -66,11 +74,15 @@ export default function StudentRegister() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // If any validation message exists, stop here.
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
+
+    // Temporary submit simulation until API wiring is complete.
     setLoading(true);
     // TODO: POST /auth/register with form data
     // const res = await api.post("/auth/register", { ...form, role: "student" });
@@ -96,7 +108,7 @@ export default function StudentRegister() {
       <div style={styles.pointerLight} />
 
       <div style={styles.container}>
-        {/* Back + brand */}
+        {/* Back button + K-STOP brand */}
         <div style={styles.topBar}>
           <button style={styles.backBtn} onClick={() => navigate("/register")}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -115,7 +127,7 @@ export default function StudentRegister() {
           </div>
         </div>
 
-        {/* Heading */}
+        {/* Page heading */}
         <div style={styles.headingBlock}>
           <div style={styles.rolePill}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -131,9 +143,9 @@ export default function StudentRegister() {
           </p>
         </div>
 
-        {/* Form */}
+        {/* Student registration form */}
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
-          {/* Row: name + roll */}
+          {/* Student identity details */}
           <div style={styles.row}>
             <Field
               label="Full name"
@@ -155,7 +167,7 @@ export default function StudentRegister() {
             />
           </div>
 
-          {/* College email — full width */}
+          {/* College email is required for official account verification */}
           <Field
             label="College email"
             name="email"
@@ -167,7 +179,7 @@ export default function StudentRegister() {
             hint="Must be your @kiit.ac.in address"
           />
 
-          {/* Row: hostel + gender */}
+          {/* Hostel + gender information used for mapping the student profile */}
           <div style={styles.row}>
             <SelectField
               label="Hostel"
@@ -187,7 +199,7 @@ export default function StudentRegister() {
             />
           </div>
 
-          {/* Mentor name — full width */}
+          {/* Mentor name is stored for leave and grievance routing */}
           <Field
             label="Mentor name"
             name="mentorName"
@@ -199,7 +211,7 @@ export default function StudentRegister() {
             hint="Enter your assigned faculty mentor's name"
           />
 
-          {/* Password row */}
+          {/* Password setup */}
           <div style={styles.row}>
             <PasswordField
               label="Password"

@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Relation dropdown values used in parent registration.
 const RELATIONS = ["Select relation", "Father", "Mother", "Guardian", "Other"];
 
 export default function ParentRegister() {
   const navigate = useNavigate();
+
+  // Pointer coordinates are used to create a subtle moving background glow.
   const [pointer, setPointer] = useState({ x: 58, y: 42 });
+
+  // All parent registration inputs are stored in one object for easy updates.
   const [form, setForm] = useState({
     parentName: "",
     wardName: "",
@@ -21,6 +26,7 @@ export default function ParentRegister() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Convert mouse position into percentage values for CSS variables.
   function handlePointerMove(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -31,9 +37,11 @@ export default function ParentRegister() {
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear only the current field error while user is correcting input.
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
+  // Run simple client-side checks before we call the backend API.
   function validate() {
     const errs = {};
     if (!form.parentName) errs.parentName = "Parent name is required.";
@@ -58,11 +66,15 @@ export default function ParentRegister() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // Stop submit if validation fails and show inline messages.
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
+
+    // Placeholder flow until real registration API is connected.
     setLoading(true);
     // TODO: POST /auth/register with form data
     // const res = await api.post("/auth/register", { ...form, role: "parent" });
@@ -123,7 +135,9 @@ export default function ParentRegister() {
           </p>
         </div>
 
+        {/* Parent registration form */}
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
+          {/* Parent + ward basic details */}
           <div style={styles.row}>
             <Field
               label="Parent name"
@@ -145,6 +159,7 @@ export default function ParentRegister() {
             />
           </div>
 
+          {/* Ward identity details */}
           <div style={styles.row}>
             <Field
               label="Ward roll number"
@@ -166,6 +181,7 @@ export default function ParentRegister() {
             />
           </div>
 
+          {/* Contact details used for login and alerts */}
           <Field
             label="Email address"
             name="email"
@@ -188,6 +204,7 @@ export default function ParentRegister() {
             hint="Use the primary number linked to your ward"
           />
 
+          {/* Password setup */}
           <div style={styles.row}>
             <PasswordField
               label="Password"
