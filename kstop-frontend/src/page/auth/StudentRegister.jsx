@@ -7,8 +7,7 @@ const HOSTELS = [
   "HS-1", "HS-2", "HS-3", "HS-4", "HS-5",
   "HS-6", "HS-7", "HS-8", "HS-9", "HS-10",
   "HS-11", "HS-12", "HS-13", "HS-14", "HS-15",
-  "HN-1", "HN-2", "HN-3", "HN-4", "HN-5",
-  "KIIT Nagar", "Other",
+  "HN-1", "HN-2", "HN-3", "HN-4", "HN-5", "Other",
 ];
 
 const GENDERS = ["Select gender", "Male", "Female", "Prefer not to say"];
