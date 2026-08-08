@@ -109,7 +109,7 @@ if (role !== "parent" && !email.endsWith("@kiit.ac.in")) {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "An account with this email already exists.",
+        message: "An account with this email or password already exists.",
       });
     }
 

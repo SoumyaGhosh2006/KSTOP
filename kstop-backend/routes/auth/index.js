@@ -29,7 +29,11 @@ router.post("/login", login);
 
 // POST /api/auth/forgot-password
 // Sends a password reset email via Resend
-router.post("/forgot-password", forgotPassword);
+
+
+// router.post("/forgot-password", forgotPassword);
+
+
 
 // POST /api/auth/reset-password
 // Sets a new password using the emailed token

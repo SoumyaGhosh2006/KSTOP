@@ -66,7 +66,6 @@ async function login(req, res) {
     // The token contains the user's id and role.
     // It's signed with JWT_SECRET from your .env file.
     // Expires in 7 days — user stays logged in for a week.
-    //
     // This token is sent back to the frontend and stored
     // in localStorage. Every future API request sends it
     // in the Authorization header so we know who's calling.
