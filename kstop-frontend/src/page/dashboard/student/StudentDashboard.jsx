@@ -4,7 +4,9 @@ import "./student-dashboard.css";
 export default function StudentDashboard() {
   return (
     <StudentShell title="Good afternoon, Soumya">
+      {/* Top-to-bottom layout keeps the most urgent leave status visible first. */}
       <div className="student-dashboard-stack">
+        {/* Primary leave status card shown first so the most urgent info is easy to spot. */}
         <section className="student-surface student-hero-card">
           <div>
             <span className="student-eyebrow">Gate pass ready</span>
@@ -16,6 +18,7 @@ export default function StudentDashboard() {
           </button>
         </section>
 
+        {/* Recent leave summary keeps the latest approval context visible at a glance. */}
         <section className="student-surface student-panel-card">
           <span className="student-eyebrow" style={{ color: "#7d7469" }}>
             Most recent leave
@@ -24,6 +27,7 @@ export default function StudentDashboard() {
           <p>Parent approved - Mentor approved - Gate pass active</p>
         </section>
 
+        {/* Three compact status tiles for quick daily checks. */}
         <section className="student-three-grid">
           <article className="student-surface student-tile">
             <span className="student-eyebrow" style={{ color: "#7d7469" }}>
@@ -53,6 +57,7 @@ export default function StudentDashboard() {
           </article>
         </section>
 
+        {/* Notification feed for recent updates and actions. */}
         <section className="student-surface student-list-card">
           <span className="student-eyebrow" style={{ color: "#7d7469" }}>
             Notifications

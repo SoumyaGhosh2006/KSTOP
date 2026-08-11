@@ -48,6 +48,7 @@ export default function StudentShell({ title, backTo, children }) {
     navigate("/login");
   }
 
+  // These fallback labels keep the shell readable even when user data is incomplete.
   const name = user?.name || "Soumya";
   const hostelLabel = user?.hostel ? `${user.hostel} Hostel` : "CV Raman Hostel";
   const roomLabel = user?.room ? `Room ${user.room}` : "Room 214";
@@ -72,6 +73,7 @@ export default function StudentShell({ title, backTo, children }) {
         <span />
       </button>
 
+      {/* Desktop hover zone makes the sidebar easy to discover without forcing it open. */}
       {!isMobile ? (
         <div
           className="student-sidebar-hover-zone"
@@ -117,11 +119,13 @@ export default function StudentShell({ title, backTo, children }) {
           ))}
         </nav>
 
+        {/* Logout lives in the shell so every student page gets the same exit action. */}
         <button type="button" className="student-sidebar__logout" onClick={handleLogout}>
           Log out
         </button>
       </aside>
 
+      {/* The page-specific content is rendered here while the shell stays shared. */}
       <main className="student-main">
         <header className="student-header">
           {showBack ? (

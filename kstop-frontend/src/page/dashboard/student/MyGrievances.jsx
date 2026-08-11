@@ -1,6 +1,7 @@
 import StudentShell from "../../../components/student/StudentShell";
 import "./student-dashboard.css";
 
+// Static sample data for the grievance list until live data is connected.
 const GRIEVANCES = [
   { title: "Water leakage in bathroom", status: "In progress", tone: "progress" },
   { title: "Wi-Fi not working, 3rd floor", status: "Open", tone: "open" },
@@ -10,10 +11,12 @@ const GRIEVANCES = [
 export default function MyGrievances() {
   return (
     <StudentShell title="Grievances" backTo="/dashboard/student">
+      {/* Primary action keeps the complaint flow easy to find from the top of the page. */}
       <button type="button" className="student-primary-button" style={{ marginBottom: "14px" }}>
         + Raise a complaint
       </button>
 
+      {/* This block is a placeholder for the future grievance form expansion. */}
       <section className="student-surface student-list-card">
         <div className="student-list-subtle" style={{ marginBottom: "14px", fontWeight: 700 }}>
           New grievance form (expands here)
@@ -32,6 +35,7 @@ export default function MyGrievances() {
         </div>
       </section>
 
+      {/* The list below shows each complaint and its current stage. */}
       <div className="student-subsection-label">MY GRIEVANCES</div>
 
       <section className="student-grievance-list">
