@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../../context/AuthContext";
 
 // Hostel options shown in the student registration dropdown.
 const HOSTELS = [
@@ -14,6 +15,7 @@ const GENDERS = ["Select gender", "Male", "Female", "Prefer not to say"];
 
 export default function StudentRegister() {
   const navigate = useNavigate();
+  const { login } = useAuthContext();
 
   // Pointer coordinates drive the background light movement effect.
   const [pointer, setPointer] = useState({ x: 58, y: 42 });
@@ -87,7 +89,9 @@ export default function StudentRegister() {
     // const res = await api.post("/auth/register", { ...form, role: "student" });
     setTimeout(() => {
       setLoading(false);
-      navigate("/login");
+      // Store the student in auth context, then land on the student dashboard.
+      login({ name: form.name, email: form.email, role: "student" });
+      navigate("/dashboard/student");
     }, 1200);
   }
 
