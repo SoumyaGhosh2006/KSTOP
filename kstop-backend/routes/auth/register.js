@@ -1,18 +1,23 @@
 // ─────────────────────────────────────────────
 //  routes/auth/register.js
 //  POST /api/auth/register
-
+//
 //  Handles new account creation for ALL roles.
-//  UPDATED: now requires OTP verification before account creation.
-//  Flow: user calls POST /auth/send-otp first → gets code by email
-//        → then calls this route with otp included in the body.
-
+//  UPDATED: OTP verification required before account creation.
+//  UPDATED: mentor email must end with fcs@kiit.ac.in
+//
+//  Email rules:
+//    student → any username @kiit.ac.in      e.g. 2205001@kiit.ac.in
+//    hostel  → any username @kiit.ac.in      e.g. reception@kiit.ac.in
+//    mentor  → username must end with "fcs"  e.g. johndoefcs@kiit.ac.in
+//    parent  → any email allowed             e.g. parent@gmail.com
+//
 //  Request body (common for all roles):
 //    name     — full name
-//    email    — must be @kiit.ac.in but only for parent it can end with @gmail.com
+//    email    — see rules above
 //    password — min 8 characters
 //    role     — student | mentor | hostel | parent
-//    otp      — 6-digit code sent to their email via /auth/send-otp
+//    otp      — 6-digit code from POST /auth/send-otp
 //
 //  Student extra fields:
 //    rollNumber, hostelId, gender, mentorName
@@ -29,11 +34,40 @@
 const bcrypt = require("bcryptjs");
 const prisma  = require("../../lib/prismaClient");
 
-// bcrypt cost factor — 12 rounds is secure for production
 const SALT_ROUNDS = 12;
-
-// Only these role values are accepted
 const VALID_ROLES = ["student", "mentor", "hostel", "parent"];
+
+// ── Email validation helper ───────────────────────────────────────────────
+// Returns null if valid, or an error message string if invalid.
+function validateEmail(email, role) {
+  if (role === "parent") {
+    // Parents can use any email domain
+    return null;
+  }
+
+  if (role === "student" || role === "hostel") {
+    // Must be @kiit.ac.in — any username is fine
+    if (!email.endsWith("@kiit.ac.in")) {
+      return role === "student"
+        ? "Student accounts must use a @kiit.ac.in email address."
+        : "Hostel staff accounts must use a @kiit.ac.in email address.";
+    }
+    return null;
+  }
+
+  if (role === "mentor") {
+    // Full email must end with "fcs@kiit.ac.in"
+    // e.g. johndoefcs@kiit.ac.in  → valid
+    //      johndoe@kiit.ac.in     → invalid (missing fcs before @)
+    //      johndoefcs@gmail.com   → invalid (wrong domain)
+    if (!email.endsWith("fcs@kiit.ac.in")) {
+      return "Mentor accounts must use a KIIT faculty email ending with fcs@kiit.ac.in (e.g. johndoefcs@kiit.ac.in).";
+    }
+    return null;
+  }
+
+  return null;
+}
 
 async function register(req, res) {
   try {
@@ -43,7 +77,7 @@ async function register(req, res) {
       password,
       role,
       otp,
-      // Student-only fields — undefined for other roles
+      // Student-only fields
       rollNumber,
       hostelId,
       gender,
@@ -52,7 +86,7 @@ async function register(req, res) {
       assignedHostelId,
     } = req.body;
 
-    // ── Required field check ──
+    // ── Required field check ──────────────────────────────────
     if (!name || !email || !password || !role || !otp) {
       return res.status(400).json({
         success: false,
@@ -62,7 +96,7 @@ async function register(req, res) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // ──  Role validation ─────
+    // ── Role validation ───────────────────────────────────────
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -70,17 +104,16 @@ async function register(req, res) {
       });
     }
 
-    // ── Email domain check ──────────────────
-    // Parents can use any email (gmail, yahoo, etc.)
-    // Everyone else must use their KIIT institutional email
-    if (role !== "parent" && !normalizedEmail.endsWith("@kiit.ac.in")) {
+    // ── Email domain validation ───────────────────────────────
+    const emailError = validateEmail(normalizedEmail, role);
+    if (emailError) {
       return res.status(400).json({
         success: false,
-        message: "Students, mentors and hostel staff must use a @kiit.ac.in email.",
+        message: emailError,
       });
     }
 
-    // ──  Password length check ───────
+    // ── Password length check ─────────────────────────────────
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
@@ -88,8 +121,7 @@ async function register(req, res) {
       });
     }
 
-    // ── Student-specific field check ────────
-    // These fields are required only when role is student
+    // ── Student-specific field check ──────────────────────────
     if (role === "student") {
       if (!rollNumber || !hostelId || !gender || !mentorName) {
         return res.status(400).json({
@@ -99,8 +131,7 @@ async function register(req, res) {
       }
     }
 
-    // ──  Hostel staff field check ─────────────
-    // Hostel staff must be linked to a hostel
+    // ── Hostel staff field check ──────────────────────────────
     if (role === "hostel") {
       if (!assignedHostelId) {
         return res.status(400).json({
@@ -110,8 +141,7 @@ async function register(req, res) {
       }
     }
 
-    // ── OTP verification ──────────────────────
-    // Must have called POST /auth/send-otp first for this email
+    // ── OTP verification ──────────────────────────────────────
     const otpRecord = await prisma.otp.findUnique({
       where: { email: normalizedEmail },
     });
@@ -145,8 +175,7 @@ async function register(req, res) {
       });
     }
 
-    // ──────duplicate email check ───────────
-    // Check before creating — email must be unique
+    // ── Duplicate email check ─────────────────────────────────
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -158,19 +187,16 @@ async function register(req, res) {
       });
     }
 
-    // ── Hash the password ───────────────────
-    // NEVER store plain text passwords
+    // ── Hash the password ─────────────────────────────────────
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // ──. Build user data object ──────────────
-    // roles don't get null junk fields in their records
+    // ── Build user data object ────────────────────────────────
     const userData = {
       name,
       email: normalizedEmail,
       password: hashedPassword,
       role,
 
-      // Only added if role is student
       ...(role === "student" && {
         rollNumber,
         hostelId,
@@ -178,22 +204,20 @@ async function register(req, res) {
         mentorName,
       }),
 
-      // Only added if role is hostel
       ...(role === "hostel" && {
         assignedHostelId,
       }),
     };
 
-    // ── Create user in database ────────────
+    // ── Create user in database ───────────────────────────────
     const newUser = await prisma.user.create({
       data: userData,
     });
 
-    // ── OTP is single-use — delete it now ──────
+    // ── OTP is single-use — delete it now ─────────────────────
     await prisma.otp.delete({ where: { email: normalizedEmail } });
 
-    // ──   Return success ─────────────────────
-    // Never return the password hash — only safe fields
+    // ── Return success ────────────────────────────────────────
     return res.status(201).json({
       success: true,
       message: "Account created successfully. Please log in.",

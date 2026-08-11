@@ -18,6 +18,10 @@ import ResetPassword from "./page/ResetPassword";
 
 // Dashboards
 import StudentDashboard from "./page/dashboard/student/StudentDashboard";
+import NewLeave from "./page/dashboard/student/NewLeave";
+import MyLeaves from "./page/dashboard/student/MyLeaves";
+import MessMenu from "./page/dashboard/student/MessMenu";
+import MyGrievances from "./page/dashboard/student/MyGrievances";
 import MentorDashboard from "./page/dashboard/mentor/MentorDashboard";
 import HostelDashboard from "./page/dashboard/hostel/HostelDashboard";
 
@@ -53,11 +57,11 @@ export default function App() {
 
           {/* Student Dashboard & Pages */}
           <Route path="/dashboard/student" element={<StudentDashboard />} />
-          {/* <Route path="/dashboard/student/leaves" element={<StudentLeaveQueue />} /> */}
+          <Route path="/dashboard/student/new-leave" element={<NewLeave />} />
+          <Route path="/dashboard/student/leaves" element={<MyLeaves />} />
+          <Route path="/dashboard/student/mess-menu" element={<MessMenu />} />
+          <Route path="/dashboard/student/grievances" element={<MyGrievances />} />
           {/* <Route path="/dashboard/student/leaves/:id" element={<LeaveDetail />} /> */}
-          {/* <Route path="/dashboard/student/new-leave" element={<NewLeave />} /> */}
-          {/* <Route path="/dashboard/student/grievances" element={<StudentGrievances />} /> */}
-          {/* <Route path="/dashboard/student/mess-menu" element={<StudentMessMenu />} /> */}
 
           {/* Mentor Dashboard & Pages */}
           <Route path="/dashboard/mentor" element={<MentorDashboard />} />
