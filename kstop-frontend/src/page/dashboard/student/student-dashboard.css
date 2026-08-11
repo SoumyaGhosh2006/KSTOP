@@ -6,6 +6,7 @@
 }
 
 .student-top-brand {
+  /* Fixed brand keeps the app identity visible while scrolling through pages. */
   position: fixed;
   top: 20px;
   left: 78px;
@@ -25,6 +26,7 @@
 }
 
 .student-menu-button {
+  /* Hamburger button opens the shared student sidebar. */
   position: fixed;
   top: 22px;
   left: 16px;
@@ -136,6 +138,7 @@
 }
 
 .student-header {
+  /* Header provides the page title and student context at the top. */
   padding-top: 28px;
   margin-bottom: 26px;
 }
@@ -162,6 +165,7 @@
   color: #6f6a63;
 }
 
+.student-top-brand {
 .student-dashboard-stack {
   display: flex;
   flex-direction: column;
@@ -190,129 +194,132 @@
   gap: 16px;
   border: none;
 }
-
-.student-eyebrow {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.95;
-}
-
-.student-hero-card h2,
-.student-panel-card h3,
-.student-tile h3,
-.student-list-card h3,
-.student-section-title {
-  margin: 0;
-}
-
-.student-hero-card h2 {
-  font-size: 28px;
-  margin-top: 4px;
-}
-
-.student-hero-card p {
-  margin: 4px 0 0;
-  font-size: 13px;
-}
-
-.student-hero-qr {
-  border: 0;
-  background: #fff4ed;
-  color: #eb5e28;
-  border-radius: 10px;
-  padding: 11px 16px;
-  font-weight: 700;
-  min-width: 92px;
-  cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.student-hero-qr:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(37, 36, 34, 0.18);
-}
-
-.student-panel-card {
-  padding: 18px 20px;
-}
-
-.student-panel-card h3 {
-  font-size: 28px;
-  margin-top: 4px;
-}
-
-.student-panel-card p {
-  margin: 6px 0 0;
-  color: #3f8f59;
-  font-size: 14px;
-}
-
-.student-three-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 720px) {
-  .student-three-grid {
-    grid-template-columns: 1fr;
+  .student-progress-row {
+    /* These chips map the approval flow from request to gate pass. */
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
   }
 
-  .student-hero-card {
-    flex-direction: column;
-    align-items: flex-start;
+  .student-progress-chip {
+    border: 1px solid #d8d1bf;
+    background: #f4f1e9;
+    color: #5f5a54;
+    border-radius: 999px;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 13px;
   }
 
-  .student-hero-qr {
-    align-self: stretch;
+  .student-progress-chip.is-active {
+    background: #f35f24;
+    border-color: #f35f24;
+    color: #fffcf2;
   }
-}
 
-.student-tile {
-  padding: 16px 18px;
-}
+  .student-form-card {
+    background: #fffcf8;
+    border: 1px solid #d8d1bf;
+    border-radius: 14px;
+    padding: 0;
+  }
 
-.student-tile h3 {
-  margin-top: 4px;
-  font-size: 16px;
-}
+  .student-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
 
-.student-tile p {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: #514c45;
-  line-height: 1.5;
-}
+  .student-input,
+  .student-textarea,
+  .student-select {
+    width: 100%;
+    border: 1px solid #d8d1bf;
+    border-radius: 8px;
+    background: #fbfaf6;
+    color: #252422;
+    padding: 14px 14px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
 
-.student-tile small,
-.student-list-subtle {
-  color: #8c857c;
-  font-size: 12px;
-}
+  .student-textarea {
+    resize: vertical;
+    min-height: 108px;
+  }
 
-.student-status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #f35f24;
-  margin-right: 8px;
-  vertical-align: middle;
-}
+  .student-full-width {
+    grid-column: 1 / -1;
+  }
 
-.student-list-card {
-  padding: 16px 20px;
-}
+  .student-action-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    align-items: center;
+  }
 
+  .student-primary-button,
+  .student-secondary-button,
+  .student-toggle-button {
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .student-primary-button {
+    border: 0;
+    background: #f35f24;
+    color: #fffcf2;
+    font-weight: 700;
+  }
+
+  .student-secondary-button {
+    border: 1px solid #d8d1bf;
+    background: #fffcf8;
+    color: #514c45;
+  }
+
+  .student-note {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #8c857c;
+  }
+
+  .student-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .student-filter-pill {
+    border: 1px solid #d8d1bf;
+    background: #fffdf8;
+    color: #514c45;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+
+  .student-filter-pill.is-active {
+    background: #252422;
+    border-color: #252422;
+    color: #fffcf2;
+  }
+
+
+  .student-leave-list,
+  .student-grievance-list {
 .student-list {
   margin: 12px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
+    /* Shared row-card styles keep the leave and grievance lists visually aligned. */
   gap: 0;
 }
 
@@ -503,6 +510,7 @@
 }
 
 .student-toolbar {
+  /* Small horizontal utility bar for selects and helper text. */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -515,6 +523,7 @@
 }
 
 .student-hero-image {
+  /* Placeholder panel for the uploaded mess menu image. */
   width: min(100%, 560px);
   aspect-ratio: 1.45;
   margin: 0 auto;
@@ -528,6 +537,7 @@
 }
 
 .student-subsection-label {
+  /* Tiny section label separates the list from the form preview above it. */
   margin: 24px 0 10px;
   font-size: 12px;
   font-weight: 700;

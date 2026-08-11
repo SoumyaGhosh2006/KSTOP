@@ -4,6 +4,7 @@ import "./student-dashboard.css";
 export default function MessMenu() {
   return (
     <StudentShell title="Mess Menu" backTo="/dashboard/student">
+      {/* Hostel selector is read-only here so students can compare mess menus quickly. */}
       <div className="student-toolbar">
         <select className="student-input student-hostel-select" defaultValue="CV Raman (yours)">
           <option>CV Raman (yours)</option>
@@ -13,6 +14,7 @@ export default function MessMenu() {
         <span className="student-list-subtle">Other hostels: read-only, rating disabled</span>
       </div>
 
+      {/* The large title and image slot are a simple preview of the uploaded menu card. */}
       <section>
         <h2
           style={{
