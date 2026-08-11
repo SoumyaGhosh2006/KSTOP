@@ -6,7 +6,7 @@
 //  Every model = one table in PostgreSQL.
 //
 //  After editing this file, always run:
-//    npx prisma migrate dev --name <describe-what-changed>
+//    npx.cmd prisma migrate dev --name <describe-what-changed>
 //  That command pushes the changes to your real database.
 // ─────────────────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ model User {
   role      Role                           // student | mentor | hostel | parent
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   // ── Student-only fields ──
   // null for mentor/hostel/parent acc
   rollNumber String?  // e.g. "22053XXX"
@@ -302,6 +302,9 @@ model Notification {
 
 // ─────────────────────────────────────────────────────────────
 //  MODEL: PasswordResetToken
+//  One user can have multiple tokens over time (old ones just
+//  get orphaned/expired — we always look up by the token itself,
+//  never by userId, so this is fine).
 // ─────────────────────────────────────────────────────────────
 model PasswordResetToken {
   id        String   @id @default(cuid())
@@ -329,4 +332,17 @@ model Announcement {
 
   // Relations
   mentor User @relation(fields: [mentorId], references: [id])
+}
+
+//────────────────────────────────────────────────────────────
+//OTP model for email verification and password reset
+//────────────────────────────────────────────────────────────
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
