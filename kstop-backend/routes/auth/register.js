@@ -1,72 +1,96 @@
 // ─────────────────────────────────────────────
 //  routes/auth/register.js
+//  LOCATION: kstop-backend/routes/auth/register.js
+//
 //  POST /api/auth/register
 //
-//  Handles new account creation for ALL roles.
-//  UPDATED: OTP verification required before account creation.
-//  UPDATED: mentor email must end with fcs@kiit.ac.in
+//  Step 2 of registration. Step 1 is POST /auth/send-otp.
+//  The user fills the form, gets an OTP by email, then submits
+//  both the form data and the OTP together to this route.
 //
-//  Email rules:
-//    student → any username @kiit.ac.in      e.g. 2205001@kiit.ac.in
-//    hostel  → any username @kiit.ac.in      e.g. reception@kiit.ac.in
-//    mentor  → username must end with "fcs"  e.g. johndoefcs@kiit.ac.in
-//    parent  → any email allowed             e.g. parent@gmail.com
+//  EMAIL RULES (enforced here AND on the frontend):
+//    student → must end with @kiit.ac.in
+//              e.g.  22053001.student@kiit.ac.in
 //
-//  Request body (common for all roles):
-//    name     — full name
-//    email    — see rules above
-//    password — min 8 characters
-//    role     — student | mentor | hostel | parent
-//    otp      — 6-digit code from POST /auth/send-otp
+//    mentor  → must end with fcs@kiit.ac.in  ← TEACHER emails at KIIT
+//              e.g.  priya.fcs@kiit.ac.in
+//              Note: "fcs" stands for the faculty school domain at KIIT
 //
-//  Student extra fields:
+//    hostel  → must end with @kiit.ac.in (same rule as students)
+//              The email IS the hostel's official ID — one account per hostel.
+//              e.g.  kp1@kiit.ac.in, kp2@kiit.ac.in, qc3@kiit.ac.in
+//              There is no separate "warden" concept. The hostel's
+//              official email is the only one that can register/login.
+//
+//    parent  → any email allowed (gmail, yahoo, etc.)
+//              e.g.  parent@gmail.com
+//
+//  Required for ALL roles:
+//    name, email, password, role, otp
+//
+//  Student-only extra fields:
 //    rollNumber, hostelId, gender, mentorName
 //
-//  Hostel staff extra field:
-//    assignedHostelId
+//  Hostel role: NO extra fields needed.
+//  The hostel is identified by their email (e.g. kp1@kiit.ac.in).
 //
 //  Returns:
 //    201 — account created successfully
-//    400 — validation error, bad/expired OTP, or duplicate email
+//    400 — validation error / wrong OTP / duplicate email
 //    500 — unexpected server error
 // ─────────────────────────────────────────────
 
 const bcrypt = require("bcryptjs");
 const prisma  = require("../../lib/prismaClient");
 
+// bcrypt cost — 12 rounds is the industry standard for production
+// Higher number = harder to crack if DB is stolen, but slower to hash
 const SALT_ROUNDS = 12;
+
+// Only these role values are accepted (must match schema.prisma Role enum)
 const VALID_ROLES = ["student", "mentor", "hostel", "parent"];
 
-// ── Email validation helper ───────────────────────────────────────────────
-// Returns null if valid, or an error message string if invalid.
-function validateEmail(email, role) {
+// ── Email domain checker ──────────────────────────────────────
+// Returns true if the email is valid for the given role, false if not.
+// This is the single place where email rules live — easy to update later.
+function isEmailValidForRole(email, role) {
   if (role === "parent") {
-    // Parents can use any email domain
-    return null;
-  }
-
-  if (role === "student" || role === "hostel") {
-    // Must be @kiit.ac.in — any username is fine
-    if (!email.endsWith("@kiit.ac.in")) {
-      return role === "student"
-        ? "Student accounts must use a @kiit.ac.in email address."
-        : "Hostel staff accounts must use a @kiit.ac.in email address.";
-    }
-    return null;
+    // Parents can use any provider (gmail, yahoo, etc.)
+    // We just check it has a basic "@" and "." — anything reasonable
+    return email.includes("@") && email.split("@")[1]?.includes(".");
   }
 
   if (role === "mentor") {
-    // Full email must end with "fcs@kiit.ac.in"
-    // e.g. johndoefcs@kiit.ac.in  → valid
-    //      johndoe@kiit.ac.in     → invalid (missing fcs before @)
-    //      johndoefcs@gmail.com   → invalid (wrong domain)
-    if (!email.endsWith("fcs@kiit.ac.in")) {
-      return "Mentor accounts must use a KIIT faculty email ending with fcs@kiit.ac.in (e.g. johndoefcs@kiit.ac.in).";
-    }
-    return null;
+    // KIIT teacher/faculty emails end with fcs@kiit.ac.in
+    // e.g. john.fcs@kiit.ac.in or priya.fcs@kiit.ac.in
+    return email.endsWith("fcs@kiit.ac.in");
   }
 
-  return null;
+  if (role === "student" || role === "hostel") {
+    // Both students and hostel staff use the same regular KIIT email format.
+    // e.g. student:      22053001.student@kiit.ac.in
+    //      hostel staff: kingspalace5@kiit.ac.in
+    // Must end with @kiit.ac.in but NOT fcs@kiit.ac.in (that suffix is for teachers only)
+    return email.endsWith("@kiit.ac.in") && !email.endsWith("fcs@kiit.ac.in");
+  }
+
+  return false;
+}
+
+// ── Friendly error message per role ──────────────────────────
+// Returns a specific, helpful message depending on which role's
+// email domain rule was violated.
+function getEmailError(role) {
+  if (role === "mentor") {
+    return "Mentor/faculty email must end with 'fcs@kiit.ac.in' (e.g. priya.fcs@kiit.ac.in).";
+  }
+  if (role === "student") {
+    return "Student email must end with '@kiit.ac.in' (e.g. 22053001.student@kiit.ac.in).";
+  }
+  if (role === "hostel") {
+    return "Hostel staff email must end with '@kiit.ac.in' (e.g. kingspalace5@kiit.ac.in).";
+  }
+  return "Invalid email format.";
 }
 
 async function register(req, res) {
@@ -77,26 +101,27 @@ async function register(req, res) {
       password,
       role,
       otp,
-      // Student-only fields
+      // Student-only — these will be undefined for other roles
       rollNumber,
       hostelId,
       gender,
       mentorName,
-      // Hostel staff-only field
-      assignedHostelId,
+      // Note: hostel role needs NO extra fields.
+      // Their email (e.g. kp1@kiit.ac.in) already identifies which hostel they are.
     } = req.body;
 
-    // ── Required field check ──────────────────────────────────
+    // ── 1. Required fields check ─────────────────────────────
     if (!name || !email || !password || !role || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, password, role and otp are all required.",
+        message: "Name, email, password, role, and OTP are all required.",
       });
     }
 
+    // Trim and lowercase the email for consistency
     const normalizedEmail = email.trim().toLowerCase();
 
-    // ── Role validation ───────────────────────────────────────
+    // ── 2. Role must be one of the four valid options ─────────
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -104,78 +129,77 @@ async function register(req, res) {
       });
     }
 
-    // ── Email domain validation ───────────────────────────────
-    const emailError = validateEmail(normalizedEmail, role);
-    if (emailError) {
+    // ── 3. Email domain rule per role ─────────────────────────
+    // Mentor must use fcs@kiit.ac.in, student/hostel use @kiit.ac.in,
+    // parent can use anything. See isEmailValidForRole() above.
+    if (!isEmailValidForRole(normalizedEmail, role)) {
       return res.status(400).json({
         success: false,
-        message: emailError,
+        message: getEmailError(role),
       });
     }
 
-    // ── Password length check ─────────────────────────────────
+    // ── 4. Password length ────────────────────────────────────
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters.",
+        message: "Password must be at least 8 characters long.",
       });
     }
 
-    // ── Student-specific field check ──────────────────────────
+    // ── 5. Student-specific required fields ───────────────────
     if (role === "student") {
       if (!rollNumber || !hostelId || !gender || !mentorName) {
         return res.status(400).json({
           success: false,
-          message: "Students must provide rollNumber, hostelId, gender and mentorName.",
+          message: "Students must also provide: rollNumber, hostelId, gender, and mentorName.",
         });
       }
     }
 
-    // ── Hostel staff field check ──────────────────────────────
-    if (role === "hostel") {
-      if (!assignedHostelId) {
-        return res.status(400).json({
-          success: false,
-          message: "Hostel staff must provide assignedHostelId.",
-        });
-      }
-    }
-
-    // ── OTP verification ──────────────────────────────────────
+    // ── 6. OTP verification ───────────────────────────────────
+    // User should have called /send-otp before reaching this route.
+    // We check the OTP we stored in the DB for their email.
     const otpRecord = await prisma.otp.findUnique({
       where: { email: normalizedEmail },
     });
 
     if (!otpRecord) {
+      // No OTP found — they skipped /send-otp or used a different email
       return res.status(400).json({
         success: false,
-        message: "No OTP found for this email. Please request a new one.",
+        message: "No verification code found. Please request a new one.",
       });
     }
 
     if (otpRecord.verified) {
+      // This OTP was already used — single-use only
       return res.status(400).json({
         success: false,
-        message: "This OTP has already been used. Please request a new one.",
+        message: "This code has already been used. Please request a new one.",
       });
     }
 
     if (new Date() > new Date(otpRecord.expiresAt)) {
+      // OTP has expired — clean it up, ask for a new one
       await prisma.otp.delete({ where: { email: normalizedEmail } });
       return res.status(400).json({
         success: false,
-        message: "OTP has expired. Please request a new one.",
+        message: "Verification code expired. Please request a new one.",
       });
     }
 
-    if (otpRecord.otp !== otp.trim()) {
+    if (otpRecord.otp !== otp.toString().trim()) {
+      // OTP entered doesn't match what we stored
       return res.status(400).json({
         success: false,
-        message: "Incorrect OTP. Please try again.",
+        message: "Incorrect code. Please check and try again.",
       });
     }
 
-    // ── Duplicate email check ─────────────────────────────────
+    // ── 7. Check for duplicate email ──────────────────────────
+    // /send-otp checks this too, but someone could register between
+    // those two calls, so we check again here to be safe
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -183,44 +207,50 @@ async function register(req, res) {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "An account with this email already exists.",
+        message: "An account with this email already exists. Please log in.",
       });
     }
 
-    // ── Hash the password ─────────────────────────────────────
+    // ── 8. Hash the password ──────────────────────────────────
+    // NEVER store passwords as plain text in the database.
+    // bcrypt turns "mypassword123" into an unreadable hash like:
+    // "$2a$12$LQv3c1yqBWVHxkd0LHAkCO..."
+    // Even if someone steals the database, they can't reverse the hash.
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // ── Build user data object ────────────────────────────────
+    // ── 9. Build the user record ──────────────────────────────
+    // We only include role-specific fields for the right role.
+    // A mentor or hostel account shouldn't have rollNumber, for example.
     const userData = {
-      name,
-      email: normalizedEmail,
+      name:     name.trim(),
+      email:    normalizedEmail,
       password: hashedPassword,
       role,
 
+      // Spread student fields only if role is student
       ...(role === "student" && {
-        rollNumber,
-        hostelId,
-        gender,
-        mentorName,
+        rollNumber: rollNumber.trim(),
+        hostelId,           // FK → Hostel.id
+        gender,             // must match Gender enum: Male | Female | PreferNotToSay
+        mentorName: mentorName.trim(),
       }),
 
-      ...(role === "hostel" && {
-        assignedHostelId,
-      }),
+      // Hostel role: no extra fields needed.
+      // The hostel is identified by the email itself (e.g. kp1@kiit.ac.in).
     };
 
-    // ── Create user in database ───────────────────────────────
-    const newUser = await prisma.user.create({
-      data: userData,
-    });
+    // ── 10. Save user to database ─────────────────────────────
+    const newUser = await prisma.user.create({ data: userData });
 
-    // ── OTP is single-use — delete it now ─────────────────────
+    // ── 11. Delete the OTP — it's single-use ─────────────────
+    // Once the account is created, this OTP must never work again.
     await prisma.otp.delete({ where: { email: normalizedEmail } });
 
-    // ── Return success ────────────────────────────────────────
+    // ── 12. Return success ────────────────────────────────────
+    // Don't return the password hash — only safe public fields.
     return res.status(201).json({
       success: true,
-      message: "Account created successfully. Please log in.",
+      message: "Account created successfully! You can now log in.",
       user: {
         id:   newUser.id,
         name: newUser.name,
@@ -229,7 +259,7 @@ async function register(req, res) {
     });
 
   } catch (error) {
-    console.error("[register] Error:", error.message);
+    console.error("[register] Unexpected error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again.",

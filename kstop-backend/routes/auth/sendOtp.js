@@ -128,10 +128,13 @@ async function sendOtp(req, res) {
     });
 
   } catch (error) {
-    console.error("[send-otp] Error:", error.message);
+    console.error("[send-otp] Error:", error);
+    console.error("[send-otp] Error Message:", error.message);
+    console.error("[send-otp] Error Stack:", error.stack);
     return res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again.",
+      error: error.message, // DEBUG: Remove in production
     });
   }
 }

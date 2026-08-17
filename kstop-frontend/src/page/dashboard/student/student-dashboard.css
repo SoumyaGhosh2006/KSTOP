@@ -165,7 +165,7 @@
   color: #6f6a63;
 }
 
-.student-top-brand {
+.student-top-brand ,
 .student-dashboard-stack {
   display: flex;
   flex-direction: column;
@@ -310,31 +310,38 @@
     color: #fffcf2;
   }
 
-
   .student-leave-list,
   .student-grievance-list {
-.student-list {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-    /* Shared row-card styles keep the leave and grievance lists visually aligned. */
-  gap: 0;
-}
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-.student-list li {
-  color: #3d3a35;
-  font-size: 14px;
-  padding: 10px 0;
-  border-bottom: 1px solid #efe9dc;
-}
+  .student-list-card {
+    padding: 16px 20px;
+  }
 
-.student-list li:last-child {
-  border-bottom: none;
-}
+  .student-list {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
 
-.student-progress-row {
+  .student-list li {
+    color: #3d3a35;
+    font-size: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #efe9dc;
+  }
+
+  .student-list li:last-child {
+    border-bottom: none;
+  }
+
+  .student-progress-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;

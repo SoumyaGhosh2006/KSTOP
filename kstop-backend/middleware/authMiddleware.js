@@ -1,64 +1,103 @@
-// middleware/authMiddleware.js
-// LOCATION: kstop-backend/middleware/authMiddleware.js
+// ─────────────────────────────────────────────
+//  middleware/authMiddleware.js
+//  LOCATION: kstop-backend/middleware/authMiddleware.js
 //
-// Two exports:
-//   verifyToken      → checks JWT, attaches req.user
-//   authorizeRoles   → factory that restricts a route to specific roles
+//  This file has TWO exports used on every protected route:
 //
-// NOTE: Role enum in schema.prisma is LOWERCASE:
-//   student | mentor | hostel | parent
-// Make sure login.js signs the JWT with role exactly as stored in DB
-// (i.e. lowercase) so this matches without extra conversion.
+//  1. verifyToken     → checks the JWT, attaches user info to req.user
+//  2. authorizeRoles  → checks the user's role is allowed for that route
+//
+//  HOW IT'S USED in a route file:
+//    const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
+//
+//    // Only mentors can hit this route:
+//    router.get("/leave-queue", verifyToken, authorizeRoles("mentor"), handler);
+//
+//    // Both mentors and hostel staff can hit this:
+//    router.get("/something", verifyToken, authorizeRoles("mentor", "hostel"), handler);
+//
+//  IMPORTANT: Role values in the DB are LOWERCASE:
+//    student | mentor | hostel | parent
+//  The JWT is signed with these exact lowercase values in login.js,
+//  so they will always match here.
+//
+//  FIX APPLIED: Changed from ES module syntax (import/export) to
+//  CommonJS (require/module.exports) to match the rest of the backend.
+//  The old file used "import jwt from 'jsonwebtoken'" which crashes
+//  the server because server.js uses require().
+// ─────────────────────────────────────────────
 
-import jwt from 'jsonwebtoken';
+const jwt = require("jsonwebtoken");
 
-// ── verifyToken ───────────────────────────────────────────────────────────
-// Reads the Bearer token from the Authorization header, verifies it,
-// and attaches the decoded payload to req.user.
+// ── verifyToken ───────────────────────────────────────────────
+// This middleware runs before any protected route handler.
+// It reads the token from the Authorization header,
+// verifies it is valid and not expired, then saves the
+// decoded user info onto req.user so route handlers can use it.
 //
-// req.user will look like: { id, email, role, iat, exp }
-export const verifyToken = (req, res, next) => {
+// After this runs, req.user looks like:
+//   { id: "clx2abc123", role: "student", iat: ..., exp: ... }
+const verifyToken = (req, res, next) => {
+  // The frontend sends the token in the header like:
+  //   Authorization: Bearer eyJhbGci...
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  // If there's no header or it doesn't start with "Bearer ", reject
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Access denied. No token provided." });
   }
 
-  const token = authHeader.split(' ')[1];
+  // Split "Bearer eyJhbGci..." → take the part after the space
+  const token = authHeader.split(" ")[1];
 
   try {
+    // jwt.verify checks the signature AND expiry at once
+    // If valid, it returns the original payload we put in during login
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Attach user info to the request object
+    // Route handlers can now do: req.user.id, req.user.role
     req.user = decoded;
-    next();
+
+    next(); // move on to the actual route handler
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    // Token expired → tell frontend to redirect to login
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Session expired. Please log in again." });
     }
-    return res.status(401).json({ error: 'Invalid token.' });
+    // Token was tampered with or invalid
+    return res.status(401).json({ error: "Invalid token." });
   }
 };
 
-// ── authorizeRoles ────────────────────────────────────────────────────────
-// Usage in a route file:
-//   router.get('/mentor-only', verifyToken, authorizeRoles('mentor'), handler)
-//   router.get('/multi-role',  verifyToken, authorizeRoles('mentor', 'hostel'), handler)
+// ── authorizeRoles ────────────────────────────────────────────
+// Call this AFTER verifyToken on any route that should only be
+// accessible to certain roles.
 //
-// Roles in the system (lowercase): student | mentor | hostel | parent
-export const authorizeRoles = (...allowedRoles) => {
-  // normalize once, in case someone passes 'MENTOR' by mistake
-  const normalizedAllowed = allowedRoles.map(r => r.toLowerCase());
+// Example: authorizeRoles("mentor") lets only mentors through.
+//          authorizeRoles("mentor", "hostel") lets both through.
+//
+// It returns a middleware function (that's why there's a function
+// inside a function — it's called a "factory function").
+const authorizeRoles = (...allowedRoles) => {
+  // Normalize to lowercase so "MENTOR" and "mentor" both work
+  const normalized = allowedRoles.map((r) => r.toLowerCase());
 
   return (req, res, next) => {
+    // verifyToken must run first — req.user should exist by now
     if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated.' });
+      return res.status(401).json({ error: "Not authenticated." });
     }
 
-    if (!normalizedAllowed.includes(req.user.role)) {
+    // Check if the user's role is in the allowed list
+    if (!normalized.includes(req.user.role)) {
       return res.status(403).json({
-        error: `Access denied. This action requires one of: ${normalizedAllowed.join(', ')}.`,
+        error: `Access denied. This route requires: ${normalized.join(", ")}.`,
       });
     }
 
-    next();
+    next(); // role is allowed — proceed to the route handler
   };
 };
+
+module.exports = { verifyToken, authorizeRoles };
