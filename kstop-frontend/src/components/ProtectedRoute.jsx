@@ -3,18 +3,12 @@ import { Navigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 
 /**
- * Wraps any route that requires authentication.
- * 
- * Usage in App.jsx:
- *   <Route path="/dashboard/hostel" element={
- *     <ProtectedRoute requiredRole="hostel">
- *       <HostelDashboard />
- *     </ProtectedRoute>
- *   } />
- * 
- * - If not logged in → redirects to /login
- * - If logged in but wrong role → redirects to /login
- * - If logged in with correct role → renders the page normally
+ * Enforces authentication and an optional role requirement for a route.
+ * Unauthenticated users and users with an unmatched role are redirected to `/login`.
+ *
+ * @param {React.ReactNode} children - Content to render for an authorized user.
+ * @param {string} [requiredRole] - Role required to access the route.
+ * @return {React.ReactNode} The protected content or a redirect to `/login`.
  */
 export default function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, user } = useAuthContext();

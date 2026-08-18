@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import HostelShell from "../../../components/hostel/HostelShell";
 import api from "../../../utils/api";
 
+/**
+ * Display hostel summary metrics, quick actions, and the latest uploaded menu.
+ */
 export default function HostelDashboard() {
   const [summary, setSummary] = useState({
     leaveCount: 0,

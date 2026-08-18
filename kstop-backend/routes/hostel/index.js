@@ -28,6 +28,11 @@ const upload = multer({
 
 router.use(verifyToken);
 
+/**
+ * Retrieves a user's identity, hostel assignments, and email address.
+ * @param {string|number} userId - The user's identifier.
+ * @returns {Object|null} The selected user details, or `null` when no matching user exists.
+ */
 async function getHostelUser(userId) {
   return prisma.user.findUnique({
     where: { id: userId },
@@ -41,6 +46,11 @@ async function getHostelUser(userId) {
   });
 }
 
+/**
+ * Resolves the hostel assigned to a staff member, creating and assigning one based on the staff member's name when necessary.
+ * @param {string|number} userId - The staff member's user ID.
+ * @return {string|number|null} The assigned hostel ID, or `null` if the user cannot be found.
+ */
 async function getHostelIdForStaff(userId) {
   const user = await getHostelUser(userId);
   if (!user) return null;
@@ -61,10 +71,21 @@ async function getHostelIdForStaff(userId) {
   return hostel.id;
 }
 
+/**
+ * Builds the public URL for an uploaded mess-menu image.
+ * @param {object} req - The Express request used to determine the protocol and host.
+ * @param {string} filename - The uploaded image filename.
+ * @return {string} The image's public URL.
+ */
 function readImageUrl(req, filename) {
   return `${req.protocol}://${req.get("host")}/uploads/mess-menus/${filename}`;
 }
 
+/**
+ * Converts QR payload data into a usable value.
+ * @param {*} payload - An object or JSON-encoded payload.
+ * @return {*} The original object, the parsed JSON value, or `null` when parsing fails.
+ */
 function parseQrPayload(payload) {
   if (typeof payload === "object" && payload !== null) return payload;
 
@@ -75,6 +96,11 @@ function parseQrPayload(payload) {
   }
 }
 
+/**
+ * Normalizes leave data into the standard leave-record fields.
+ * @param {Object} data - Leave data using supported field names and aliases.
+ * @returns {Object} A normalized leave record with converted dates and an approval status.
+ */
 function normalizeLeaveRecord(data) {
   return {
     studentName: data.studentName || data.name || "",
@@ -88,6 +114,11 @@ function normalizeLeaveRecord(data) {
   };
 }
 
+/**
+ * Identifies missing or invalid fields in a leave record.
+ * @param {Object} record - The leave record to validate.
+ * @returns {string[]} The names of required fields that are missing or contain invalid dates.
+ */
 function validateLeaveRecord(record) {
   const missingFields = [];
 
@@ -107,6 +138,12 @@ function validateLeaveRecord(record) {
   return missingFields;
 }
 
+/**
+ * Creates a hostel leave record from submitted leave details.
+ * @param {string|number} userId - The hostel staff user's identifier.
+ * @param {Object} body - Leave details and optional record source.
+ * @return {Promise<Object>} An object containing either the created record or an error message for missing or invalid fields.
+ */
 async function createLeaveRecordFromBody(userId, body) {
   const hostelId = await getHostelIdForStaff(userId);
   const record = normalizeLeaveRecord(body);
