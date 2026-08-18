@@ -106,6 +106,7 @@ async function register(req, res) {
       hostelId,
       gender,
       mentorName,
+      assignedHostelId,
       // Note: hostel role needs NO extra fields.
       // Their email (e.g. kp1@kiit.ac.in) already identifies which hostel they are.
     } = req.body;
@@ -211,6 +212,25 @@ async function register(req, res) {
       });
     }
 
+    let studentHostel = null;
+    let assignedHostel = null;
+
+    if (role === "student") {
+      studentHostel = await prisma.hostel.upsert({
+        where: { name: hostelId.trim() },
+        update: {},
+        create: { name: hostelId.trim() },
+      });
+    }
+
+    if (role === "hostel" && assignedHostelId) {
+      assignedHostel = await prisma.hostel.upsert({
+        where: { name: assignedHostelId.trim() },
+        update: {},
+        create: { name: assignedHostelId.trim() },
+      });
+    }
+
     // ── 8. Hash the password ──────────────────────────────────
     // NEVER store passwords as plain text in the database.
     // bcrypt turns "mypassword123" into an unreadable hash like:
@@ -230,13 +250,14 @@ async function register(req, res) {
       // Spread student fields only if role is student
       ...(role === "student" && {
         rollNumber: rollNumber.trim(),
-        hostelId,           // FK → Hostel.id
+        hostelId: studentHostel.id,           // FK -> Hostel.id
         gender,             // must match Gender enum: Male | Female | PreferNotToSay
         mentorName: mentorName.trim(),
       }),
 
-      // Hostel role: no extra fields needed.
-      // The hostel is identified by the email itself (e.g. kp1@kiit.ac.in).
+      ...(role === "hostel" && assignedHostel && {
+        assignedHostelId: assignedHostel.id,
+      }),
     };
 
     // ── 10. Save user to database ─────────────────────────────
@@ -268,3 +289,4 @@ async function register(req, res) {
 }
 
 module.exports = { register };
+

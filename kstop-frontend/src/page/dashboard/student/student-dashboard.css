@@ -194,6 +194,89 @@
   gap: 16px;
   border: none;
 }
+
+/* Small label that sits above a title to give context */
+.student-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.75;
+}
+
+/* QR / Download button inside the hero card */
+.student-hero-qr {
+  border: 2px solid rgba(255, 252, 242, 0.6);
+  background: transparent;
+  color: #fffcf2;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Card that shows the most recent leave summary */
+.student-panel-card {
+  padding: 18px 22px;
+}
+
+.student-panel-card h3 {
+  margin: 4px 0 6px;
+  font-size: 18px;
+}
+
+.student-panel-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+/* Three-column grid for the quick-stat tiles */
+.student-three-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Individual stat tile inside the three-grid */
+.student-tile {
+  padding: 16px 18px;
+}
+
+.student-tile h3 {
+  margin: 6px 0 4px;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.student-tile p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+.student-tile small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9c9489;
+}
+
+/* Small coloured dot used as a status indicator */
+.student-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #eb5e28;
+  margin-right: 6px;
+  vertical-align: middle;
+}
   .student-progress-row {
     /* These chips map the approval flow from request to gate pass. */
     display: grid;

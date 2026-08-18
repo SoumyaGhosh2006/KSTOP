@@ -141,6 +141,7 @@ model Hostel {
   hostelStaff User[]      @relation("HostelStaff")    // staff managing this hostel 
   grievances  Grievance[]                             // complaints filed from this hostel
   messMenus   MessMenu[]                              // menu uploads for this hostel
+  leaveRecords HostelLeaveRecord[]                    // scanned/manual hostel leave records
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -273,6 +274,27 @@ model FoodRating {
 
   // One rating per food item per student per menu — no duplicates
   @@unique([menuId, studentId, foodItem])
+}
+
+model HostelLeaveRecord {
+  id                 String   @id @default(cuid())
+  hostelId           String
+  studentName        String
+  rollNumber         String
+  contactNumber      String
+  leaveStartDate     DateTime
+  leaveEndDate       DateTime
+  parentsPhoneNumber String
+  mentorName         String
+  approved           Boolean  @default(true)
+  source             String   @default("manual")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  hostel Hostel @relation(fields: [hostelId], references: [id])
+
+  @@index([hostelId])
+  @@index([rollNumber])
 }
 
 // ─────────────────────────────────────────────────────────────
