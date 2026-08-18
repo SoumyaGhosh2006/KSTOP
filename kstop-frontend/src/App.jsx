@@ -5,6 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Auth Pages
 import Register from "./page/Register";
@@ -24,71 +25,100 @@ import MessMenu from "./page/dashboard/student/MessMenu";
 import MyGrievances from "./page/dashboard/student/MyGrievances";
 import MentorDashboard from "./page/dashboard/mentor/MentorDashboard";
 import HostelDashboard from "./page/dashboard/hostel/HostelDashboard";
-
-// TODO: Uncomment when built
-// import StudentLeaveQueue from "./page/dashboard/student/MyLeaves";
-// import StudentGrievances from "./page/dashboard/student/MyGrievances";
-// import StudentMessMenu from "./page/dashboard/student/MessMenu";
-// etc.
+import MessMenuUpload from "./page/dashboard/hostel/MessMenuUpload";
+import HostelQrScanner from "./page/dashboard/hostel/HostelQrScanner";
+import HostelLeaveRecords from "./page/dashboard/hostel/HostelLeaveRecords";
+import HostelGrievances from "./page/dashboard/hostel/HostelGrievances";
 
 export default function App() {
   return (
     <Router>
       <AuthProvider>
         <Routes>
-          {/* ──── Auth Routes ──── */}
-
-          {/* Role Selection */}
+          {/* ──── Public Auth Routes ──── */}
           <Route path="/register" element={<Register />} />
-
-          {/* Registration Forms */}
           <Route path="/studentregister" element={<StudentRegister />} />
           <Route path="/register/student" element={<StudentRegister />} />
           <Route path="/register/mentor" element={<MentorRegister />} />
           <Route path="/register/parent" element={<ParentRegister />} />
           <Route path="/register/hostel" element={<HostelRegister />} />
-
-          {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ──── Protected Dashboard Routes ──── */}
+          {/* ──── Student Routes ──── */}
+          <Route path="/dashboard/student" element={
+            <ProtectedRoute requiredRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/new-leave" element={
+            <ProtectedRoute requiredRole="student">
+              <NewLeave />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/leaves" element={
+            <ProtectedRoute requiredRole="student">
+              <MyLeaves />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/mess-menu" element={
+            <ProtectedRoute requiredRole="student">
+              <MessMenu />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/grievances" element={
+            <ProtectedRoute requiredRole="student">
+              <MyGrievances />
+            </ProtectedRoute>
+          } />
 
-          {/* Student Dashboard & Pages */}
-          <Route path="/dashboard/student" element={<StudentDashboard />} />
-          <Route path="/dashboard/student/new-leave" element={<NewLeave />} />
-          <Route path="/dashboard/student/leaves" element={<MyLeaves />} />
-          <Route path="/dashboard/student/mess-menu" element={<MessMenu />} />
-          <Route path="/dashboard/student/grievances" element={<MyGrievances />} />
-          {/* <Route path="/dashboard/student/leaves/:id" element={<LeaveDetail />} /> */}
+          {/* ──── Mentor Routes ──── */}
+          <Route path="/dashboard/mentor" element={
+            <ProtectedRoute requiredRole="mentor">
+              <MentorDashboard />
+            </ProtectedRoute>
+          } />
 
-          {/* Mentor Dashboard & Pages */}
-          <Route path="/dashboard/mentor" element={<MentorDashboard />} />
-          {/* <Route path="/dashboard/mentor/leave-queue" element={<MentorLeaveQueue />} /> */}
-          {/* <Route path="/dashboard/mentor/mentees" element={<MenteesList />} /> */}
-          {/* <Route path="/dashboard/mentor/grievances" element={<MentorGrievances />} /> */}
-
-          {/* Hostel (Warden) Dashboard & Pages */}
-          <Route path="/dashboard/hostel" element={<HostelDashboard />} />
-          {/* <Route path="/dashboard/hostel/grievances" element={<HostelGrievances />} /> */}
-          {/* <Route path="/dashboard/hostel/mess-menu" element={<HostelMessMenu />} /> */}
-          {/* <Route path="/dashboard/hostel/feedback" element={<HostelFeedback />} /> */}
+          {/* ──── Hostel Routes ──── */}
+          <Route path="/dashboard/hostel" element={
+            <ProtectedRoute requiredRole="hostel">
+              <HostelDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/hostel/mess-menu" element={
+            <ProtectedRoute requiredRole="hostel">
+              <MessMenuUpload />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/hostel/scan-qr" element={
+            <ProtectedRoute requiredRole="hostel">
+              <HostelQrScanner />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/hostel/leave-records" element={
+            <ProtectedRoute requiredRole="hostel">
+              <HostelLeaveRecords />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/hostel/grievances" element={
+            <ProtectedRoute requiredRole="hostel">
+              <HostelGrievances />
+            </ProtectedRoute>
+          } />
 
           {/* ──── Shared Routes ──── */}
-          <Route
-            path="/notifications"
-            element={<div>Notifications Page (TODO)</div>}
-          />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <div>Notifications Page (TODO)</div>
+            </ProtectedRoute>
+          } />
 
-          {/* ──── Default Route ──── */}
+          {/* ──── Default & 404 ──── */}
           <Route path="/" element={<Navigate to="/register" replace />} />
-
-          {/* 404 Fallback */}
-          <Route
-            path="*"
-            element={<div style={styles.notFound}>Page not found</div>}
-          />
+          <Route path="*" element={
+            <div style={styles.notFound}>Page not found</div>
+          } />
         </Routes>
       </AuthProvider>
     </Router>

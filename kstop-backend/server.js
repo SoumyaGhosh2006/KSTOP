@@ -14,6 +14,7 @@
 
 const express = require("express");
 const cors    = require("cors");
+const path    = require("path");
 require("dotenv").config(); // loads your .env file into process.env
 
 const app = express();
@@ -31,16 +32,19 @@ app.use(cors({
 // Parse incoming JSON request bodies
 // Without this, req.body is undefined in all your route handlers
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ── Routes ────────────────────────────────────────────────────
 
 // Import the auth router (index.js inside routes/auth/)
 // It handles: /send-otp, /register, /login, /forgot-password, /reset-password
 const authRoutes = require("./routes/auth/index");
+const hostelRoutes = require("./routes/hostel/index");
 
 // Mount the auth router at /api/auth
 // So POST /api/auth/login, POST /api/auth/register, etc.
 app.use("/api/auth", authRoutes);
+app.use("/api/hostel", hostelRoutes);
 
 // ── Health check route ────────────────────────────────────────
 // Visit http://localhost:5000/api/health to confirm the server is running

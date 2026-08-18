@@ -29,6 +29,11 @@
 
 const jwt = require("jsonwebtoken");
 
+const DEV_TOKENS = {
+  "dev-token-hostel": { id: "hostel-test-123", role: "hostel" },
+  "dev-token-student": { id: "student-test-123", role: "student" },
+};
+
 // ── verifyToken ───────────────────────────────────────────────
 // This middleware runs before any protected route handler.
 // It reads the token from the Authorization header,
@@ -49,6 +54,14 @@ const verifyToken = (req, res, next) => {
 
   // Split "Bearer eyJhbGci..." → take the part after the space
   const token = authHeader.split(" ")[1];
+
+  // Dev-only mock tokens used by the quick login buttons on the frontend.
+  // These are intentionally not real JWTs, so they must be accepted only in dev.
+  const isDevelopment = (process.env.NODE_ENV || "development") === "development";
+  if (isDevelopment && DEV_TOKENS[token]) {
+    req.user = DEV_TOKENS[token];
+    return next();
+  }
 
   try {
     // jwt.verify checks the signature AND expiry at once
