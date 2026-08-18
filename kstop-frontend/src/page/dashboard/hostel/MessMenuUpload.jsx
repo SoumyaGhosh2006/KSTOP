@@ -48,8 +48,12 @@ export default function MessMenuUpload() {
 
     try {
       setIsUploading(true);
+      // IMPORTANT: our shared api instance sends "Content-Type: application/json"
+      // by default, which corrupts file uploads. Setting it to undefined makes
+      // axios detect the FormData and build the correct multipart header
+      // (including the boundary text) automatically.
       const response = await api.post("/hostel/mess-menu", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": undefined },
       });
       setUploadedMenu(response.data.menu);
       setMessage("Menu uploaded successfully. It is now visible to mentors, hostel users, and all students.");
