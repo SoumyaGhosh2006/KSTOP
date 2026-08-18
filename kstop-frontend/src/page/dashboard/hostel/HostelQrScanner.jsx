@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import HostelShell from "../../../components/hostel/HostelShell";
 import api from "../../../utils/api";
 
+/**
+ * Provide camera and manual QR scanning for approved leave data.
+ * @returns {JSX.Element} The QR scanner interface.
+ */
 export default function HostelQrScanner() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);

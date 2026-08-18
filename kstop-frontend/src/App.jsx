@@ -30,6 +30,9 @@ import HostelQrScanner from "./page/dashboard/hostel/HostelQrScanner";
 import HostelLeaveRecords from "./page/dashboard/hostel/HostelLeaveRecords";
 import HostelGrievances from "./page/dashboard/hostel/HostelGrievances";
 
+/**
+ * Renders the application's public authentication pages and role-protected dashboard routes.
+ */
 export default function App() {
   return (
     <Router>

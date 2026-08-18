@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import HostelShell from "../../../components/hostel/HostelShell";
 import api from "../../../utils/api";
 
+/**
+ * Determines the display label and visual tone for a grievance's resolution status.
+ * @param {Object} grievance - The grievance with staff and student status values.
+ * @return {{text: string, tone: string}} The status label text and visual tone.
+ */
 function getGrievanceLabel(grievance) {
   if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "DISPUTED") {
     return { text: "This grievance hasn't been resolved", tone: "alert" };
@@ -18,6 +23,9 @@ function getGrievanceLabel(grievance) {
   return { text: "Not resolved", tone: "alert" };
 }
 
+/**
+ * Display and manage student grievances for the hostel.
+ */
 export default function HostelGrievances() {
   const [grievances, setGrievances] = useState([]);
   const [openId, setOpenId] = useState(null);
