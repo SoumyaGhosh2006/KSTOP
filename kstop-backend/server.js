@@ -40,11 +40,13 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // It handles: /send-otp, /register, /login, /forgot-password, /reset-password
 const authRoutes = require("./routes/auth/index");
 const hostelRoutes = require("./routes/hostel/index");
+const leaveRoutes = require("./routes/leave/index");
 
 // Mount the auth router at /api/auth
 // So POST /api/auth/login, POST /api/auth/register, etc.
 app.use("/api/auth", authRoutes);
 app.use("/api/hostel", hostelRoutes);
+app.use("/api/leave", leaveRoutes);
 
 // ── Health check route ────────────────────────────────────────
 // Visit http://localhost:5000/api/health to confirm the server is running
@@ -58,6 +60,32 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.method} ${req.path}`,
+  });
+});
+
+// ── Global error handler ──────────────────────────────────────
+// This catches errors thrown by middleware that runs BEFORE our
+// route handlers — most importantly multer (menu image uploads).
+// Examples: image larger than 5 MB, or a file type that is not
+// JPEG/PNG. Without this, the browser received an HTML error page
+// and the frontend could only show "Menu upload failed."
+// The 4 parameters (err, req, res, next) are how Express knows
+// this is an error handler — all four are required.
+app.use((err, req, res, next) => {
+  // Multer has its own error names, e.g. "LIMIT_FILE_SIZE".
+  if (err.name === "MulterError") {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "The image is too large. Maximum size is 5 MB."
+        : `Upload error: ${err.message}`;
+    return res.status(400).json({ success: false, message });
+  }
+
+  // Errors we created ourselves (e.g. "Only JPEG and PNG menu images are allowed.")
+  console.error("[server] Unhandled error:", err);
+  res.status(500).json({
+    success: false,
+    message: err.message || "Something went wrong on the server.",
   });
 });
 
