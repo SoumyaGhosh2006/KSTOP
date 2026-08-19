@@ -1,7 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import jsQR from "jsqr";
 import HostelShell from "../../../components/hostel/HostelShell";
 import api from "../../../utils/api";
+
+// ─────────────────────────────────────────────
+//  HostelQrScanner
+//
+//  HOW QR DETECTION WORKS HERE:
+//  Some browsers (Chrome, Edge) have a built-in BarcodeDetector
+//  that can read QR codes directly. Others (Firefox, Safari) do
+//  not — that was why the camera never opened and the page said
+//  "Camera QR detection is not available in this browser."
+//
+//  FIX: when BarcodeDetector is missing, we fall back to the
+//  "jsqr" library. Every half second we copy one video frame onto
+//  an invisible canvas and let jsQR look for a QR code in it.
+//  This works in every modern browser.
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+//  HostelQrScanner
+//
+//  HOW QR DETECTION WORKS HERE:
+//  Some browsers (Chrome, Edge) have a built-in BarcodeDetector
+//  that can read QR codes directly. Others (Firefox, Safari) do
+//  not — that was why the camera never opened and the page said
+//  "Camera QR detection is not available in this browser."
+//
+//  FIX: when BarcodeDetector is missing, we fall back to the
+//  "jsqr" library. Every half second we copy one video frame onto
+//  an invisible canvas and let jsQR look for a QR code in it.
+//  This works in every modern browser.
+// ─────────────────────────────────────────────
 
 /**
  * Provide camera and manual QR scanning for approved leave data.
@@ -11,6 +42,9 @@ export default function HostelQrScanner() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const scanTimerRef = useRef(null);
+  // Remembers the last scan attempt so a QR that fails to save
+  // (e.g. not approved yet) does not spam an error every half second.
+  const lastAttemptRef = useRef(0);
   const [isScanning, setIsScanning] = useState(false);
   const [manualQrData, setManualQrData] = useState("");
   const [message, setMessage] = useState("");
@@ -34,12 +68,59 @@ export default function HostelQrScanner() {
     }
   }
 
+  // Reads one frame from the camera and tries to find a QR code in it.
+  // Returns the decoded text, or null when nothing is found.
+  async function scanFrame(detector) {
+    const video = videoRef.current;
+    if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return null;
+
+    // Path 1: browser has a built-in QR reader (Chrome, Edge)
+    if (detector) {
+      const codes = await detector.detect(video);
+      return codes[0]?.rawValue || null;
+    }
+
+    // Path 2: jsQR fallback (Firefox, Safari, older browsers).
+    // We draw the current video frame onto a hidden canvas and
+    // hand the raw pixels to jsQR.
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    return code?.data || null;
+  }
+
+  // Turns a getUserMedia failure into a message a human understands.
+  function describeCameraError(cameraError) {
+    if (cameraError?.name === "NotAllowedError") {
+      return "Camera permission was denied. Click the camera icon in the browser address bar, allow access, then press Start Camera again.";
+    }
+    if (cameraError?.name === "NotFoundError" || cameraError?.name === "OverconstrainedError") {
+      return "No camera was found on this device.";
+    }
+    if (cameraError?.name === "NotReadableError") {
+      return "The camera is already being used by another app or browser tab. Close it and try again.";
+    }
+    return "Camera access was blocked or unavailable.";
+  }
+
   async function startCamera() {
     setError("");
     setMessage("");
 
-    if (!("BarcodeDetector" in window)) {
-      setError("Camera QR detection is not available in this browser. Paste the QR data below.");
+    // getUserMedia only works on https:// or http://localhost.
+    // If someone opens the site as http://<ip-address> the browser
+    // blocks the camera completely — explain that instead of failing silently.
+    if (!window.isSecureContext) {
+      setError("The camera only works on https:// or http://localhost. Open the site on localhost or enable HTTPS.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("This browser does not support camera access. Paste the QR data below instead.");
       return;
     }
 
@@ -52,17 +133,26 @@ export default function HostelQrScanner() {
       await videoRef.current.play();
       setIsScanning(true);
 
-      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+      // Use the built-in detector when the browser has one,
+      // otherwise scanFrame falls back to jsQR automatically.
+      const detector =
+        "BarcodeDetector" in window
+          ? new window.BarcodeDetector({ formats: ["qr_code"] })
+          : null;
+
       scanTimerRef.current = window.setInterval(async () => {
-        if (!videoRef.current) return;
-        const codes = await detector.detect(videoRef.current);
-        const firstCode = codes[0];
-        if (firstCode?.rawValue) {
-          await saveQrData(firstCode.rawValue);
+        // Cooldown: after any attempt, wait 3 seconds before the
+        // next one so errors/success messages stay readable.
+        if (Date.now() - lastAttemptRef.current < 3000) return;
+
+        const qrText = await scanFrame(detector);
+        if (qrText) {
+          lastAttemptRef.current = Date.now();
+          await saveQrData(qrText);
         }
-      }, 900);
-    } catch {
-      setError("Camera access was blocked or unavailable.");
+      }, 500);
+    } catch (cameraError) {
+      setError(describeCameraError(cameraError));
       stopCamera();
     }
   }
