@@ -29,6 +29,10 @@ import MessMenuUpload from "./page/dashboard/hostel/MessMenuUpload";
 import HostelQrScanner from "./page/dashboard/hostel/HostelQrScanner";
 import HostelLeaveRecords from "./page/dashboard/hostel/HostelLeaveRecords";
 import HostelGrievances from "./page/dashboard/hostel/HostelGrievances";
+import ParentDashboard from "./page/dashboard/parent/ParentDashboard";
+import ParentPendingLeaves from "./page/dashboard/parent/ParentPendingLeaves";
+import ParentLeaveHistory from "./page/dashboard/parent/ParentLeaveHistory";
+import ParentMessageMentor from "./page/dashboard/parent/ParentMessageMentor";
 
 export default function App() {
   return (
@@ -47,78 +51,148 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ──── Student Routes ──── */}
-          <Route path="/dashboard/student" element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/student/new-leave" element={
-            <ProtectedRoute requiredRole="student">
-              <NewLeave />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/student/leaves" element={
-            <ProtectedRoute requiredRole="student">
-              <MyLeaves />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/student/mess-menu" element={
-            <ProtectedRoute requiredRole="student">
-              <MessMenu />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/student/grievances" element={
-            <ProtectedRoute requiredRole="student">
-              <MyGrievances />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/dashboard/student"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/new-leave"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <NewLeave />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/leaves"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <MyLeaves />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/mess-menu"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <MessMenu />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/grievances"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <MyGrievances />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ──── Mentor Routes ──── */}
-          <Route path="/dashboard/mentor" element={
-            <ProtectedRoute requiredRole="mentor">
-              <MentorDashboard />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/dashboard/mentor"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <MentorDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ──── Hostel Routes ──── */}
-          <Route path="/dashboard/hostel" element={
-            <ProtectedRoute requiredRole="hostel">
-              <HostelDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/hostel/mess-menu" element={
-            <ProtectedRoute requiredRole="hostel">
-              <MessMenuUpload />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/hostel/scan-qr" element={
-            <ProtectedRoute requiredRole="hostel">
-              <HostelQrScanner />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/hostel/leave-records" element={
-            <ProtectedRoute requiredRole="hostel">
-              <HostelLeaveRecords />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/hostel/grievances" element={
-            <ProtectedRoute requiredRole="hostel">
-              <HostelGrievances />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/dashboard/hostel"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <HostelDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/hostel/mess-menu"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <MessMenuUpload />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/hostel/scan-qr"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <HostelQrScanner />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/hostel/leave-records"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <HostelLeaveRecords />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/hostel/grievances"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <HostelGrievances />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* ──── Parent Routes ──── */}
+          <Route
+            path="/dashboard/parent"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/parent/pending-leaves"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentPendingLeaves />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/parent/leave-history"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentLeaveHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/parent/message-mentor"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentMessageMentor />
+              </ProtectedRoute>
+            }
+          />
           {/* ──── Shared Routes ──── */}
-          <Route path="/notifications" element={
-            <ProtectedRoute>
-              <div>Notifications Page (TODO)</div>
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <div>Notifications Page (TODO)</div>
+              </ProtectedRoute>
+            }
+          />
 
           {/* ──── Default & 404 ──── */}
           <Route path="/" element={<Navigate to="/register" replace />} />
-          <Route path="*" element={
-            <div style={styles.notFound}>Page not found</div>
-          } />
+          <Route
+            path="*"
+            element={<div style={styles.notFound}>Page not found</div>}
+          />
         </Routes>
       </AuthProvider>
     </Router>

@@ -32,6 +32,7 @@ const jwt = require("jsonwebtoken");
 const DEV_TOKENS = {
   "dev-token-hostel": { id: "hostel-test-123", role: "hostel" },
   "dev-token-student": { id: "student-test-123", role: "student" },
+  "dev-token-parent": { id: "parent-test-123", role: "parent" },
 };
 
 // ── verifyToken ───────────────────────────────────────────────

@@ -27,22 +27,71 @@ export default function Login() {
     navigate("/dashboard/student");
   }
 
+  function quickLoginAsParent() {
+    login("dev-token-parent", {
+      id: "parent-test-123",
+      name: "Parent User",
+      email: "parent@example.com",
+      role: "parent",
+      childRollNumber: "2205001",
+    });
+    navigate("/dashboard/parent");
+  }
+
   return (
     <div style={{ padding: "40px", textAlign: "center" }}>
       <h1>Login page coming soon.</h1>
       <p>Dev quick-login:</p>
-      <div style={{ marginTop: "30px", display: "flex", gap: "10px", justifyContent: "center" }}>
-        <button onClick={quickLoginAsHostel} style={{
-          padding: "12px 24px", fontSize: "16px", cursor: "pointer",
-          background: "#d95d39", color: "white", border: "none", borderRadius: "8px",
-        }}>
+      <div
+        style={{
+          marginTop: "30px",
+          display: "flex",
+          gap: "10px",
+          justifyContent: "center",
+        }}
+      >
+        <button
+          onClick={quickLoginAsHostel}
+          style={{
+            padding: "12px 24px",
+            fontSize: "16px",
+            cursor: "pointer",
+            background: "#d95d39",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+          }}
+        >
           Quick Login as Hostel
         </button>
-        <button onClick={quickLoginAsStudent} style={{
-          padding: "12px 24px", fontSize: "16px", cursor: "pointer",
-          background: "#666", color: "white", border: "none", borderRadius: "8px",
-        }}>
+        <button
+          onClick={quickLoginAsStudent}
+          style={{
+            padding: "12px 24px",
+            fontSize: "16px",
+            cursor: "pointer",
+            background: "#666",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+          }}
+        >
           Quick Login as Student
+        </button>
+
+        <button
+          onClick={quickLoginAsParent}
+          style={{
+            padding: "12px 24px",
+            fontSize: "16px",
+            cursor: "pointer",
+            background: "#2d8b53",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+          }}
+        >
+          Quick Login as Parent
         </button>
       </div>
       <p style={{ marginTop: "20px", fontSize: "12px", color: "#999" }}>

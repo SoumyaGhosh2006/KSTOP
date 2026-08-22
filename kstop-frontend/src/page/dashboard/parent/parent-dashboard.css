@@ -1,0 +1,647 @@
+/* ─────────────────────────────────────────────
+   parent-dashboard.css
+   Parent Dashboard Styles
+
+   Follows the EXACT same design system as student-dashboard.css:
+     - Beige background (#f8f4e8)
+     - Dark sidebar (#252422) with orange accent (#eb5e28)
+     - White rounded cards with subtle shadow
+     - Orange primary buttons
+     - Same spacing, same typography scale
+   ───────────────────────────────────────────── */
+
+.parent-shell {
+  min-height: 100vh;
+  background: #f8f4e8;
+  color: #252422;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ── Sidebar ── */
+.parent-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 250px;
+  background: #252422;
+  color: #fffcf2;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+}
+
+.parent-sidebar__brand {
+  padding: 10px 12px 28px;
+}
+
+.parent-sidebar__greeting {
+  margin: 0 0 4px;
+  color: rgba(255, 252, 242, 0.72);
+  font-size: 14px;
+}
+
+.parent-sidebar__brand span {
+  color: rgba(255, 252, 242, 0.68);
+  font-size: 13px;
+}
+
+.parent-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parent-sidebar__link {
+  color: rgba(255, 252, 242, 0.82);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  padding: 13px 14px;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.parent-sidebar__link:hover {
+  color: #fffcf2;
+  background: rgba(255, 252, 242, 0.06);
+}
+
+.parent-sidebar__link.is-active {
+  background: #71341c;
+  border-left-color: #eb5e28;
+  color: #fffcf2;
+}
+
+.parent-sidebar__logout {
+  margin-top: auto;
+  border: 1px solid rgba(255, 252, 242, 0.16);
+  background: transparent;
+  color: #fffcf2;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.parent-sidebar__logout:hover {
+  background: rgba(255, 252, 242, 0.08);
+}
+
+/* ── Hover zone (desktop only) ── */
+.parent-sidebar-hover-zone {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 24px;
+  z-index: 29;
+}
+
+/* Sidebar slides in when hover zone or sidebar itself is hovered */
+.parent-sidebar-hover-zone:hover ~ .parent-sidebar,
+.parent-sidebar:hover {
+  transform: translateX(0);
+}
+
+/* ── Main content ── */
+.parent-main {
+  margin-left: 0;
+  padding: 30px 28px 44px;
+  max-width: 1040px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.parent-header {
+  margin-bottom: 22px;
+}
+
+.parent-header p {
+  margin: 0 0 5px;
+  color: #7d746b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.parent-header h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.parent-back-link {
+  border: 0;
+  background: transparent;
+  color: #eb5e28;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── Mobile hamburger ── */
+.parent-menu-toggle {
+  display: none;
+}
+
+/* ── Cards / Surfaces ── */
+.parent-surface {
+  background: #ffffff;
+  border: 1px solid #d8d1bf;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(37, 36, 34, 0.04);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.parent-surface:hover {
+  box-shadow: 0 14px 32px rgba(37, 36, 34, 0.08);
+}
+
+/* ── Dashboard layout ── */
+.parent-dashboard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Hero / Info card ── */
+.parent-hero-card {
+  background: linear-gradient(135deg, #f35f24 0%, #eb5e28 100%);
+  color: #fffcf2;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: none;
+}
+
+.parent-hero-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.parent-hero-card p {
+  margin: 6px 0 0;
+  opacity: 0.85;
+  font-size: 14px;
+}
+
+/* ── Eyebrow label ── */
+.parent-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.75;
+}
+
+/* ── Panel card ── */
+.parent-panel-card {
+  padding: 18px 22px;
+}
+
+.parent-panel-card h3 {
+  margin: 4px 0 6px;
+  font-size: 18px;
+}
+
+.parent-panel-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+/* ── Grid layouts ── */
+.parent-three-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.parent-two-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── Tiles ── */
+.parent-tile {
+  padding: 16px 18px;
+}
+
+.parent-tile h3 {
+  margin: 6px 0 4px;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.parent-tile p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+.parent-tile small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9c9489;
+}
+
+/* ── Status dot ── */
+.parent-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #eb5e28;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ── List card ── */
+.parent-list-card {
+  padding: 16px 20px;
+}
+
+.parent-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.parent-list li {
+  color: #3d3a35;
+  font-size: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #efe9dc;
+}
+
+.parent-list li:last-child {
+  border-bottom: none;
+}
+
+/* ── Leave cards (pending approvals) ── */
+.parent-leave-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.parent-leave-card {
+  padding: 16px 20px;
+}
+
+.parent-leave-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.parent-leave-type {
+  font-weight: 600;
+  color: #333;
+  font-size: 15px;
+}
+
+.parent-leave-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.parent-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.parent-detail-row .label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.parent-detail-row .value {
+  font-size: 14px;
+  color: #252422;
+}
+
+.parent-leave-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Buttons ── */
+.parent-primary-button,
+.parent-secondary-button,
+.parent-danger-button {
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.parent-primary-button {
+  background: #22c55e;
+  color: white;
+}
+
+.parent-primary-button:hover {
+  background: #16a34a;
+}
+
+.parent-secondary-button {
+  background: #f35f24;
+  color: #fffcf2;
+}
+
+.parent-secondary-button:hover {
+  background: #e04d1a;
+}
+
+.parent-danger-button {
+  background: #ef4444;
+  color: white;
+}
+
+.parent-danger-button:hover {
+  background: #dc2626;
+}
+
+.parent-primary-button:disabled,
+.parent-secondary-button:disabled,
+.parent-danger-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Status pills ── */
+.parent-status-pill {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.parent-status-pill.is-pending_parent {
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+.parent-status-pill.is-pending_mentor {
+  color: #1e40af;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+.parent-status-pill.is-approved {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.parent-status-pill.is-rejected {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+/* ── Table ── */
+.parent-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.parent-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.parent-table th,
+.parent-table td {
+  border-bottom: 1px solid #e8e0d4;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+.parent-table th {
+  color: #70675e;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Message thread ── */
+.parent-message-thread {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.parent-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.parent-message-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-left: auto;
+  background: #eb5e28;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.parent-message-text {
+  margin: 0 0 6px;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.parent-message-time {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.parent-message-input-area {
+  padding: 16px 20px;
+}
+
+.parent-message-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d8d1bf;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+/* ── Empty state ── */
+.parent-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8c857c;
+}
+
+.parent-empty-state h3 {
+  margin: 0 0 8px;
+  color: #514c45;
+  font-size: 18px;
+}
+
+/* ── Filter row ── */
+.parent-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.parent-filter-pill {
+  border: 1px solid #d8d1bf;
+  background: #fffdf8;
+  color: #514c45;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.parent-filter-pill.is-active {
+  background: #252422;
+  border-color: #252422;
+  color: #fffcf2;
+}
+
+/* ── Loading spinner ── */
+.parent-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ddd;
+  border-top-color: #eb5e28;
+  border-radius: 50%;
+  animation: parent-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes parent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Error / Success text ── */
+.parent-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.parent-success {
+  color: #16a34a;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* ── Desktop: add left padding so content isn't hidden behind hover sidebar ── */
+@media (min-width: 901px) {
+  .parent-main {
+    padding-left: 78px;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 900px) {
+  .parent-sidebar-hover-zone {
+    display: none;
+  }
+
+  .parent-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .parent-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    border: 0;
+    background: rgba(37, 36, 34, 0.34);
+  }
+
+  .parent-menu-toggle {
+    position: fixed;
+    top: 16px;
+    left: 14px;
+    z-index: 35;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 8px;
+    background: #252422;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 12px;
+    cursor: pointer;
+  }
+
+  .parent-menu-toggle span {
+    display: block;
+    height: 2px;
+    border-radius: 999px;
+    background: #fffcf2;
+  }
+
+  .parent-main {
+    padding: 82px 16px 32px;
+  }
+
+  .parent-header h1 {
+    font-size: 20px;
+  }
+
+  .parent-three-grid,
+  .parent-two-grid,
+  .parent-leave-details {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .parent-table-wrap {
+    overflow-x: auto;
+  }
+}

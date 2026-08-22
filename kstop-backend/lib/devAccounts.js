@@ -76,4 +76,27 @@ async function ensureDevStudentAccount(userId) {
   await ensureDevStudent();
 }
 
+async function ensureDevParent() {
+  await ensureDevStudent(); // ensure the child exists first
+
+  return prisma.user.upsert({
+    where: { id: "parent-test-123" },
+    update: {},
+    create: {
+      id: "parent-test-123",
+      name: "Parent User",
+      email: "parent@example.com",
+      password: DEV_PASSWORD_HASH,
+      role: "parent",
+      childRollNumber: "2205001",
+    },
+  });
+}
+
+async function ensureDevParentAccount(userId) {
+  if (!isDevelopment() || userId !== "parent-test-123") return;
+  await ensureDevParent();
+}
+
+module.exports = { ensureDevStudentAccount, ensureDevParentAccount };
 module.exports = { ensureDevStudentAccount };
