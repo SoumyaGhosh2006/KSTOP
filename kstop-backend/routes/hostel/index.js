@@ -86,6 +86,13 @@ const upload = multer({
 // Every route below requires a logged-in user (valid JWT token).
 router.use(verifyToken);
 
+<<<<<<< HEAD
+/**
+ * Retrieves a user's identity, hostel assignments, and email address.
+ * @param {string|number} userId - The user's identifier.
+ * @returns {Object|null} The selected user details, or `null` when no matching user exists.
+ */
+=======
 // ── Dev-only demo accounts ────────────────────────────────────
 // The Login page has two "quick login" buttons that use fake tokens
 // (dev-token-hostel / dev-token-student). Those tokens work for the
@@ -128,6 +135,7 @@ async function ensureDevHostelUser(userId) {
   });
 }
 
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 async function getHostelUser(userId) {
   let user = await prisma.user.findUnique({
     where: { id: userId },
@@ -158,10 +166,18 @@ async function getHostelUser(userId) {
   return user;
 }
 
+<<<<<<< HEAD
+/**
+ * Resolves the hostel assigned to a staff member, creating and assigning one based on the staff member's name when necessary.
+ * @param {string|number} userId - The staff member's user ID.
+ * @return {string|number|null} The assigned hostel ID, or `null` if the user cannot be found.
+ */
+=======
 // Every hostel action needs to know WHICH hostel it belongs to.
 // 1. If the account is already linked to a hostel, use that.
 // 2. Otherwise create/find a hostel with the same name as the
 //    account and link them (one-time setup, then remembered).
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 async function getHostelIdForStaff(userId) {
   const user = await getHostelUser(userId);
 
@@ -190,13 +206,30 @@ async function getHostelIdForStaff(userId) {
   return hostel.id;
 }
 
+<<<<<<< HEAD
+/**
+ * Builds the public URL for an uploaded mess-menu image.
+ * @param {object} req - The Express request used to determine the protocol and host.
+ * @param {string} filename - The uploaded image filename.
+ * @return {string} The image's public URL.
+ */
+=======
 // Builds the public URL where an uploaded menu image can be viewed.
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 function readImageUrl(req, filename) {
   return `${req.protocol}://${req.get("host")}/uploads/mess-menus/${filename}`;
 }
 
+<<<<<<< HEAD
+/**
+ * Converts QR payload data into a usable value.
+ * @param {*} payload - An object or JSON-encoded payload.
+ * @return {*} The original object, the parsed JSON value, or `null` when parsing fails.
+ */
+=======
 // QR codes can contain a JSON string; this turns the raw text into
 // a usable object. Returns null when the text is not valid JSON.
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 function parseQrPayload(payload) {
   if (typeof payload === "object" && payload !== null) return payload;
 
@@ -207,9 +240,17 @@ function parseQrPayload(payload) {
   }
 }
 
+<<<<<<< HEAD
+/**
+ * Normalizes leave data into the standard leave-record fields.
+ * @param {Object} data - Leave data using supported field names and aliases.
+ * @returns {Object} A normalized leave record with converted dates and an approval status.
+ */
+=======
 // Different QR generators use slightly different field names
 // (rollNumber vs rollNo, etc.). This maps all of them to the exact
 // field names our database table expects.
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 function normalizeLeaveRecord(data) {
   return {
     studentName: data.studentName || data.name || "",
@@ -223,8 +264,16 @@ function normalizeLeaveRecord(data) {
   };
 }
 
+<<<<<<< HEAD
+/**
+ * Identifies missing or invalid fields in a leave record.
+ * @param {Object} record - The leave record to validate.
+ * @returns {string[]} The names of required fields that are missing or contain invalid dates.
+ */
+=======
 // Checks a normalized record and returns a list of problems.
 // An empty list means the record is good to save.
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 function validateLeaveRecord(record) {
   const missingFields = [];
 
@@ -254,8 +303,17 @@ function validateLeaveRecord(record) {
   return missingFields;
 }
 
+<<<<<<< HEAD
+/**
+ * Creates a hostel leave record from submitted leave details.
+ * @param {string|number} userId - The hostel staff user's identifier.
+ * @param {Object} body - Leave details and optional record source.
+ * @return {Promise<Object>} An object containing either the created record or an error message for missing or invalid fields.
+ */
+=======
 // Shared by "manual add" and "QR scan": validates the data and
 // saves one row in the hostel leave table.
+>>>>>>> ee9adf39fa7a95a4d664695498d510bee1a6a872
 async function createLeaveRecordFromBody(userId, body) {
   const hostelId = await getHostelIdForStaff(userId);
   const record = normalizeLeaveRecord(body);
