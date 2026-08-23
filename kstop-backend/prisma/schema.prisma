@@ -6,7 +6,7 @@
 //  Every model = one table in PostgreSQL.
 //
 //  After editing this file, always run:
-//    npx.cmd prisma migrate dev --name <describe-what-changed>
+//    npx.cmd prisma db push
 //  That command pushes the changes to your real database.
 // ─────────────────────────────────────────────────────────────
 
@@ -103,16 +103,34 @@ model User {
   
   // ── Student-only fields ──
   // null for mentor/hostel/parent acc
-  rollNumber String?  // e.g. "22053XXX"
+  // @unique because the parent account links to a child using this
+  // exact value — two students can never share a roll number anyway.
+  rollNumber String?  @unique // e.g. "22053XXX"
   hostelId   String?  // which hostel this student lives in → Hostel.id
   gender     Gender?
   mentorName String?  // assigned mentor's name (plain text for now)
+
+  // Shown on the mentor's expandable leave card (click a student's
+  // name to see this). Plain fields, filled with fake/demo values
+  // for now — not wired to a real attendance system.
+  attendancePercentage Int?     // 0–100
+  academicDetails      String?  // freeform: e.g. "CGPA 8.1 · 0 backlogs"
 
   // ── Hostel staff fields ──
   // null for student/mentor/parent acc
   // any staff member linked to a hostel has full equal access 
   // upload menu, update grievances, view complaints
   assignedHostelId String?  // which hostel this staff member manages
+
+  // ── Parent-only fields ──
+  // null for student/mentor/hostel acc
+  // Plain-string lookup (same pattern as mentorName above) — no
+  // foreign key. At request time we do:
+  //   prisma.user.findUnique({ where: { rollNumber: childRollNumber } })
+  // Known limitation: one parent account = one child. A parent with
+  // multiple kids at KIIT would need a separate account per child —
+  // out of scope for this project's timeline.
+  childRollNumber String?  // roll number of the student this parent is linked to
 
   // ── Relations ────────────────────────────────────────────
 
@@ -367,4 +385,27 @@ model Otp {
   expiresAt DateTime
   verified  Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MODEL: ParentMessage
+//  Simple one-directional message log: parent → mentor, about a
+//  specific child. NOT a real-time chat (no Socket.io here) — a
+//  new message just creates a Notification for the mentor, same
+//  as every other event in this app.
+//
+//  Plain string ids (no @relation), same lightweight pattern this
+//  schema already uses for User.mentorName — keeps things simple
+//  and avoids adding new foreign keys for a small feature.
+// ─────────────────────────────────────────────────────────────
+model ParentMessage {
+  id        String   @id @default(cuid())
+  parentId  String   // User.id of the parent who sent this
+  mentorId  String   // User.id of the mentor it's addressed to
+  studentId String   // which student (child) this message is about
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([parentId])
+  @@index([mentorId])
 }

@@ -33,6 +33,7 @@ import ParentDashboard from "./page/dashboard/parent/ParentDashboard";
 import ParentPendingLeaves from "./page/dashboard/parent/ParentPendingLeaves";
 import ParentLeaveHistory from "./page/dashboard/parent/ParentLeaveHistory";
 import ParentMessageMentor from "./page/dashboard/parent/ParentMessageMentor";
+import ParentNotifications from "./page/dashboard/parent/ParentNotifications";
 
 export default function App() {
   return (
@@ -177,6 +178,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard/parent/notifications"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentNotifications />
+              </ProtectedRoute>
+            }
+          />
+
           {/* ──── Shared Routes ──── */}
           <Route
             path="/notifications"

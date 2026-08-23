@@ -1,50 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
+import api from "../../utils/api";
 import "../../page/dashboard/parent/parent-dashboard.css";
 
 // Navigation links shown in the parent sidebar.
-// Parents only see leave + messaging — no grievances, no mess, no attendance.
 const NAV_LINKS = [
   { to: "/dashboard/parent", label: "Dashboard", end: true },
   { to: "/dashboard/parent/pending-leaves", label: "Pending Approvals" },
   { to: "/dashboard/parent/leave-history", label: "Leave History" },
   { to: "/dashboard/parent/message-mentor", label: "Message Mentor" },
+  { to: "/dashboard/parent/notifications", label: "Notifications" },
 ];
 
-/**
- * ParentShell wraps every parent page with:
- *  - A sidebar that slides in when the user hovers the left edge (desktop)
- *  - A hamburger button for mobile tap-to-open
- *  - A header with eyebrow + title
- *  - A content area (children)
- *
- *  Design matches StudentShell and HostelShell exactly:
- *    - Dark sidebar (#252422) with orange active indicator (#eb5e28)
- *    - Beige background (#f8f4e8)
- *    - White rounded cards
- *    - Orange primary buttons
- */
 export default function ParentShell({ title, eyebrow, backTo, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { user, logout } = useAuthContext();
+
+  // Fetch unread notification count on mount and every 30 seconds.
+  useEffect(() => {
+    async function fetchUnread() {
+      try {
+        const res = await api.get("/parent/notifications");
+        setUnreadCount(res.data.unreadCount || 0);
+      } catch {
+        // silently fail
+      }
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   function handleLogout() {
     logout();
     navigate("/login");
   }
 
-  // Show the REAL logged-in parent's name from auth context.
-  // This is the fix for the "Asha Kumar" bug — no hardcoded fallbacks.
   const displayName = user?.name || "Parent";
 
   return (
     <div className="parent-shell">
-      {/* ── Thin hover zone on the left edge — hovering slides the sidebar in ── */}
       <div className="parent-sidebar-hover-zone" aria-hidden="true" />
 
-      {/* ── Hamburger button — only visible on mobile ── */}
       <button
         type="button"
         className="parent-menu-toggle"
@@ -56,7 +56,6 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
         <span />
       </button>
 
-      {/* ── Sidebar ── */}
       <nav className={`parent-sidebar${sidebarOpen ? " is-open" : ""}`}>
         <div className="parent-sidebar__brand">
           <p className="parent-sidebar__greeting">Hi, {displayName}</p>
@@ -75,6 +74,9 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
               onClick={() => setSidebarOpen(false)}
             >
               {link.label}
+              {link.to === "/dashboard/parent/notifications" && unreadCount > 0 ? (
+                <span className="parent-nav-badge">{unreadCount}</span>
+              ) : null}
             </NavLink>
           ))}
         </div>
@@ -84,7 +86,6 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
         </button>
       </nav>
 
-      {/* Overlay — only shown on mobile when sidebar is open */}
       {sidebarOpen ? (
         <button
           type="button"
@@ -94,7 +95,6 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
         />
       ) : null}
 
-      {/* ── Main content area ── */}
       <main className="parent-main">
         <header className="parent-header">
           <div>
@@ -110,6 +110,17 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
             ) : null}
             <h1>{title}</h1>
           </div>
+          <button
+            type="button"
+            className="parent-notif-bell"
+            onClick={() => navigate("/dashboard/parent/notifications")}
+            aria-label="Notifications"
+          >
+            🔔
+            {unreadCount > 0 ? (
+              <span className="parent-notif-badge">{unreadCount}</span>
+            ) : null}
+          </button>
         </header>
 
         {children}

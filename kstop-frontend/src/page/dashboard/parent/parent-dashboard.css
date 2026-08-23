@@ -115,6 +115,10 @@
 
 .parent-header {
   margin-bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .parent-header p {
@@ -644,4 +648,114 @@
   .parent-table-wrap {
     overflow-x: auto;
   }
+}
+/* ── Notification bell ── */
+.parent-notif-bell {
+  position: relative;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
+}
+
+.parent-notif-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ── Nav badge (inside sidebar links) ── */
+.parent-nav-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 0 5px;
+}
+
+/* ── Notification list ── */
+.parent-notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parent-notif-item {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.parent-notif-item:hover {
+  background: #f5f0e8;
+}
+
+.parent-notif-item.is-unread {
+  border-left: 3px solid #eb5e28;
+}
+
+.parent-notif-item.is-read {
+  border-left: 3px solid transparent;
+  opacity: 0.7;
+}
+
+.parent-notif-content {
+  flex: 1;
+}
+
+.parent-notif-content p {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: #252422;
+  line-height: 1.4;
+}
+
+.parent-notif-content small {
+  font-size: 12px;
+  color: #8c857c;
+}
+
+.parent-notif-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.parent-notif-mark-btn {
+  background: #252422;
+  color: #fffcf2;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.parent-notif-mark-btn:hover {
+  background: #eb5e28;
 }

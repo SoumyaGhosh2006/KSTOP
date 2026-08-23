@@ -53,7 +53,16 @@ async function ensureDevStudent() {
 
   return prisma.user.upsert({
     where: { id: "student-test-123" },
-    update: {},
+    // Re-apply these every time too (same self-healing idea as the
+    // parent's childRollNumber below) so demo data never silently
+    // goes missing after a schema change again.
+    update: {
+      rollNumber: "2205001",
+      mentorName: "Dev Mentor",
+      hostelId: hostel.id,
+      attendancePercentage: 72,
+      academicDetails: "CGPA 8.1 · 0 backlogs · CSE Core",
+    },
     create: {
       id: "student-test-123",
       name: "Asha Kumar",
@@ -64,6 +73,8 @@ async function ensureDevStudent() {
       gender: "PreferNotToSay",
       mentorName: "Dev Mentor",
       hostelId: hostel.id,
+      attendancePercentage: 72,
+      academicDetails: "CGPA 8.1 · 0 backlogs · CSE Core",
     },
   });
 }
@@ -81,7 +92,11 @@ async function ensureDevParent() {
 
   return prisma.user.upsert({
     where: { id: "parent-test-123" },
-    update: {},
+    // "update" runs even if the row already exists (e.g. someone added
+    // it by hand in Prisma Studio). We always re-set childRollNumber
+    // here so the parent → child link can never silently go missing
+    // again, like it did when the column got dropped and re-added.
+    update: { childRollNumber: "2205001" },
     create: {
       id: "parent-test-123",
       name: "Parent User",
@@ -98,5 +113,9 @@ async function ensureDevParentAccount(userId) {
   await ensureDevParent();
 }
 
+// BUG FIX: this file used to have TWO `module.exports` lines. In
+// JavaScript, the second one silently overwrites the first — so
+// ensureDevParentAccount was never actually available to other files
+// even though it was fully written above. Only one export statement
+// should ever exist in a file; keep both functions in the same object.
 module.exports = { ensureDevStudentAccount, ensureDevParentAccount };
-module.exports = { ensureDevStudentAccount };

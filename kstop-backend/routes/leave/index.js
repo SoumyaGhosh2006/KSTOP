@@ -115,7 +115,7 @@ router.post("/", authorizeRoles("student"), asyncHandler(async (req, res) => {
     });
   }
 
-  // ── 4. Save the leave request ──────────────────────────────
+   // ── 4. Save the leave request ──────────────────────────────
   const leave = await prisma.leave.create({
     data: {
       studentId: student.id,
@@ -127,12 +127,30 @@ router.post("/", authorizeRoles("student"), asyncHandler(async (req, res) => {
       place: place.trim(),
       purpose: purpose.trim(),
       arrivalDetails: arrivalDetails?.trim() || null,
-      // status defaults to PENDING_PARENT — the approval chain starts here
     },
     include: {
       mentor: { select: { name: true } },
     },
   });
+
+  // ── 5. Notify the parent ───────────────────────────────────
+  const parent = await prisma.user.findFirst({
+    where: {
+      role: "parent",
+      childRollNumber: student.rollNumber,
+    },
+  });
+
+  if (parent) {
+    await prisma.notification.create({
+      data: {
+        userId: parent.id,
+        type: "leave-submitted",
+        message: `${student.name} submitted a ${type} leave request (${start.toLocaleDateString("en-IN")} - ${end.toLocaleDateString("en-IN")}). Please review and approve.`,
+        relatedId: leave.id,
+      },
+    });
+  }
 
   res.status(201).json({ success: true, leave });
 }));

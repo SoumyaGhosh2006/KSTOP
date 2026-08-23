@@ -158,6 +158,19 @@ async function register(req, res) {
       }
     }
 
+    // ── 5b. Parent-specific required field ─────────────────────
+    // The parent registration form (ParentRegister.jsx) sends the
+    // child's roll number using the same "rollNumber" field name —
+    // for a parent, it means "my child's roll number", not their own.
+    if (role === "parent") {
+      if (!rollNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide your child's roll number.",
+        });
+      }
+    }
+
     // ── 6. OTP verification ───────────────────────────────────
     // User should have called /send-otp before reaching this route.
     // We check the OTP we stored in the DB for their email.
@@ -212,6 +225,37 @@ async function register(req, res) {
       });
     }
 
+    // ── 7b. Roll number checks ─────────────────────────────────
+    // Roll numbers are @unique in the database now, so two students
+    // can never share one — check it here first so the error message
+    // is clear instead of a raw database error.
+    if (role === "student") {
+      const existingRollNumber = await prisma.user.findUnique({
+        where: { rollNumber: rollNumber.trim() },
+      });
+      if (existingRollNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "An account with this roll number already exists.",
+        });
+      }
+    }
+
+    // A parent must be linked to a REAL, already-registered student.
+    // Otherwise a parent account would exist pointing at nobody, and
+    // the leave-approval flow would never find them.
+    if (role === "parent") {
+      const linkedChild = await prisma.user.findFirst({
+        where: { rollNumber: rollNumber.trim(), role: "student" },
+      });
+      if (!linkedChild) {
+        return res.status(400).json({
+          success: false,
+          message: `No student found with roll number "${rollNumber.trim()}". Ask your child to register first, then try again.`,
+        });
+      }
+    }
+
     let studentHostel = null;
     let assignedHostel = null;
 
@@ -258,6 +302,11 @@ async function register(req, res) {
       ...(role === "hostel" && assignedHostel && {
         assignedHostelId: assignedHostel.id,
       }),
+
+      // Spread parent fields only if role is parent
+      ...(role === "parent" && {
+        childRollNumber: rollNumber.trim(), // already verified to exist above
+      }),
     };
 
     // ── 10. Save user to database ─────────────────────────────
@@ -289,4 +338,3 @@ async function register(req, res) {
 }
 
 module.exports = { register };
-
