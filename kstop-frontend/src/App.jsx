@@ -35,6 +35,9 @@ import ParentLeaveHistory from "./page/dashboard/parent/ParentLeaveHistory";
 import ParentMessageMentor from "./page/dashboard/parent/ParentMessageMentor";
 import ParentNotifications from "./page/dashboard/parent/ParentNotifications";
 
+/**
+ * Renders the application's public authentication pages and role-protected dashboard routes.
+ */
 export default function App() {
   return (
     <Router>

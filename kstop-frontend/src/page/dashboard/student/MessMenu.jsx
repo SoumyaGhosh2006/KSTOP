@@ -3,6 +3,10 @@ import StudentShell from "../../../components/student/StudentShell";
 import api from "../../../utils/api";
 import "./student-dashboard.css";
 
+/**
+ * Reads the stored user data from local storage.
+ * @return {Object|null} The parsed user data, or `null` if it cannot be parsed.
+ */
 function readStoredUser() {
   try {
     return JSON.parse(localStorage.getItem("kstop_user"));
@@ -11,6 +15,10 @@ function readStoredUser() {
   }
 }
 
+/**
+ * Display hostel mess menus with hostel filtering and ratings for the student's hostel.
+ * @returns {JSX.Element} The mess menu view.
+ */
 export default function MessMenu() {
   const [menus, setMenus] = useState([]);
   const [selectedHostelId, setSelectedHostelId] = useState("");

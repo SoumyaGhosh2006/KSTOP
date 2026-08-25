@@ -93,6 +93,10 @@ function getEmailError(role) {
   return "Invalid email format.";
 }
 
+/**
+ * Creates an account after validating the registration details and email OTP.
+ * Responds with the new user's public details on success or an error message when validation, verification, or account creation fails.
+ */
 async function register(req, res) {
   try {
     const {

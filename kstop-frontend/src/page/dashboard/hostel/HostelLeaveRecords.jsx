@@ -13,6 +13,11 @@ const EMPTY_FORM = {
   approved: true,
 };
 
+/**
+ * Formats a date value for display using the Indian locale.
+ * @param {*} value - The date value to format.
+ * @return {string} The formatted date, or "-" when no value is provided.
+ */
 function formatDate(value) {
   if (!value) return "-";
   return new Date(value).toLocaleDateString("en-IN", {
@@ -22,6 +27,10 @@ function formatDate(value) {
   });
 }
 
+/**
+ * Displays and manages hostel leave records, including manual entry and bulk deletion.
+ * @returns {JSX.Element} The hostel leave-record management page.
+ */
 export default function HostelLeaveRecords() {
   const [records, setRecords] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);

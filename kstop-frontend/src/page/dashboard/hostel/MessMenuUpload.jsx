@@ -2,6 +2,10 @@ import { useState } from "react";
 import HostelShell from "../../../components/hostel/HostelShell";
 import api from "../../../utils/api";
 
+/**
+ * Provides a page for selecting, previewing, and uploading a hostel mess menu image.
+ * @returns {JSX.Element} The mess menu upload interface with status messages and image preview.
+ */
 export default function MessMenuUpload() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");

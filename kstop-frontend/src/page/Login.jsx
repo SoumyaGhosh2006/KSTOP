@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 
+/**
+ * Render the development quick-login page.
+ * @returns {JSX.Element} The login page with hostel and student quick-login controls.
+ */
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuthContext();

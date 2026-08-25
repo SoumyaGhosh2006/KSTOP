@@ -19,6 +19,25 @@ import api from "../../../utils/api";
 //  This works in every modern browser.
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+//  HostelQrScanner
+//
+//  HOW QR DETECTION WORKS HERE:
+//  Some browsers (Chrome, Edge) have a built-in BarcodeDetector
+//  that can read QR codes directly. Others (Firefox, Safari) do
+//  not — that was why the camera never opened and the page said
+//  "Camera QR detection is not available in this browser."
+//
+//  FIX: when BarcodeDetector is missing, we fall back to the
+//  "jsqr" library. Every half second we copy one video frame onto
+//  an invisible canvas and let jsQR look for a QR code in it.
+//  This works in every modern browser.
+// ─────────────────────────────────────────────
+
+/**
+ * Provide camera and manual QR scanning for approved leave data.
+ * @returns {JSX.Element} The QR scanner interface.
+ */
 export default function HostelQrScanner() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
