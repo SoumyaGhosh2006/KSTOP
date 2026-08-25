@@ -38,6 +38,16 @@ export default function Login() {
     navigate("/dashboard/parent");
   }
 
+  function quickLoginAsMentor() {
+    login("dev-token-mentor", {
+      id: "mentor-test-123",
+      name: "Dev Mentor",
+      email: "dev.mentor.fcs@kiit.ac.in",
+      role: "mentor",
+    });
+    navigate("/dashboard/mentor");
+  }
+
   return (
     <div style={{ padding: "40px", textAlign: "center" }}>
       <h1>Login page coming soon.</h1>
@@ -92,6 +102,21 @@ export default function Login() {
           }}
         >
           Quick Login as Parent
+        </button>
+
+        <button
+          onClick={quickLoginAsMentor}
+          style={{
+            padding: "12px 24px",
+            fontSize: "16px",
+            cursor: "pointer",
+            background: "#3a6ea5",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+          }}
+        >
+          Quick Login as Mentor
         </button>
       </div>
       <p style={{ marginTop: "20px", fontSize: "12px", color: "#999" }}>

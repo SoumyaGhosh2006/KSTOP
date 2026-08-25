@@ -42,6 +42,7 @@ const authRoutes = require("./routes/auth/index");
 const hostelRoutes = require("./routes/hostel/index");
 const leaveRoutes = require("./routes/leave/index");
 const parentRoutes = require("./routes/parent/index");
+const mentorRoutes = require("./routes/mentor/index");
 
 // Mount the auth router at /api/auth
 // So POST /api/auth/login, POST /api/auth/register, etc.
@@ -49,6 +50,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/hostel", hostelRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/parent", parentRoutes);
+app.use("/api/mentor", mentorRoutes);
 
 // ── Health check route ────────────────────────────────────────
 // Visit http://localhost:5000/api/health to confirm the server is running

@@ -26,15 +26,32 @@ function isDevelopment() {
 
 // Makes sure the dev mentor exists. The dev student's leave
 // requests get assigned to this mentor.
+//
+// FIXED ID: this used to be upserted by email only, which meant it
+// got a random auto-generated id every time the database was reset —
+// impossible to write a fixed "dev-token-mentor" login for that.
+// Every other dev account (student/parent/hostel) already uses a
+// fixed id, so this now matches that same pattern.
 async function ensureDevMentor() {
   return prisma.user.upsert({
-    where: { email: "dev.mentor.fcs@kiit.ac.in" },
-    update: {},
+    where: { id: "mentor-test-123" },
+    // Self-heal the roll range too, so "Quick Login as Mentor"
+    // always has a working demo range even after a reset.
+    // (mentorGenderScope is left null for the dev mentor on purpose —
+    // it means "matches any gender", so the dev student always finds
+    // this mentor no matter what gender they were seeded with.)
+    update: {
+      mentorRollRangeStart: 2205001,
+      mentorRollRangeEnd: 2205050,
+    },
     create: {
+      id: "mentor-test-123",
       name: "Dev Mentor",
       email: "dev.mentor.fcs@kiit.ac.in",
       password: DEV_PASSWORD_HASH,
       role: "mentor",
+      mentorRollRangeStart: 2205001,
+      mentorRollRangeEnd: 2205050,
     },
   });
 }
@@ -113,9 +130,20 @@ async function ensureDevParentAccount(userId) {
   await ensureDevParent();
 }
 
-// BUG FIX: this file used to have TWO `module.exports` lines. In
-// JavaScript, the second one silently overwrites the first — so
-// ensureDevParentAccount was never actually available to other files
-// even though it was fully written above. Only one export statement
-// should ever exist in a file; keep both functions in the same object.
-module.exports = { ensureDevStudentAccount, ensureDevParentAccount };
+// Call this with req.user.id before doing database work for a
+// mentor. In development it creates/self-heals the dev mentor;
+// in production it does nothing.
+async function ensureDevMentorAccount(userId) {
+  if (!isDevelopment() || userId !== "mentor-test-123") return;
+  await ensureDevMentor();
+}
+
+// BUG FIX (still applies): this file used to have TWO `module.exports`
+// lines. In JavaScript, the second one silently overwrites the first.
+// Only one export statement should ever exist in a file — keep every
+// function in this same object as you add more.
+module.exports = {
+  ensureDevStudentAccount,
+  ensureDevParentAccount,
+  ensureDevMentorAccount,
+};

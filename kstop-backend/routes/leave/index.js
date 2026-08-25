@@ -172,4 +172,47 @@ router.get("/my-leaves", authorizeRoles("student"), asyncHandler(async (req, res
   res.json({ success: true, leaves });
 }));
 
+// ── GET /api/leave/active-qr ──────────────────────────────────
+// Powers the QR gate-pass card on the student dashboard's home page.
+//
+// Returns the student's current APPROVED leave — but ONLY if its
+// endDate hasn't passed yet. Once the leave period is over, this
+// route stops returning it, which is what makes the card disappear
+// from the dashboard automatically.
+//
+// IMPORTANT: this does NOT delete the leave or its qrCode from the
+// database — the record stays forever for the hostel's/mentor's
+// history and audit trail. This route just stops SURFACING it once
+// it's no longer current. If the student later gets a NEW leave
+// approved, this route automatically starts returning that one
+// instead (whichever APPROVED leave is most recent).
+router.get("/active-qr", authorizeRoles("student"), asyncHandler(async (req, res) => {
+  await ensureDevStudentAccount(req.user.id);
+
+  // Midnight today — so a leave ending TODAY still counts as active
+  // for the whole day, instead of vanishing right at 12:00am.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const activeLeave = await prisma.leave.findFirst({
+    where: {
+      studentId: req.user.id,
+      status: "APPROVED",
+      endDate: { gte: startOfToday },
+    },
+    orderBy: { createdAt: "desc" }, // most recently approved, if somehow more than one
+    select: {
+      id: true,
+      type: true,
+      startDate: true,
+      endDate: true,
+      purpose: true,
+      place: true,
+      qrCode: true,
+    },
+  });
+
+  res.json({ success: true, activeLeave: activeLeave || null });
+}));
+
 module.exports = router;

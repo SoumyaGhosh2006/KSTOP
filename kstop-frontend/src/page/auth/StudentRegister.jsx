@@ -64,7 +64,12 @@ export default function StudentRegister() {
       errs.hostel = "Select your hostel.";
     if (!form.gender || form.gender === "Select gender")
       errs.gender = "Select your gender.";
-    if (!form.mentorName) errs.mentorName = "Mentor name is required.";
+    // CHANGED: mentorName is no longer required here. The backend now
+    // auto-assigns a mentor by matching this student's roll number +
+    // gender against every mentor's registered range (see
+    // routes/auth/register.js, step 7d). This field is now only a
+    // manual fallback for the rare case where no mentor's range covers
+    // this student yet — so it's fine to leave blank.
     if (!form.password) errs.password = "Password is required.";
     else if (form.password.length < 8)
       errs.password = "Password must be at least 8 characters.";
@@ -114,7 +119,11 @@ export default function StudentRegister() {
         rollNumber: form.rollNumber.trim(),
         hostelId:   form.hostel,
         gender:     form.gender === "Prefer not to say" ? "PreferNotToSay" : form.gender,
-        mentorName: form.mentorName.trim(),
+        // CHANGED: only send mentorName if the student actually typed
+        // one. An empty string would overwrite a real auto-match on
+        // the backend with nothing — sending undefined instead lets
+        // the backend's auto-assignment logic run cleanly.
+        ...(form.mentorName.trim() && { mentorName: form.mentorName.trim() }),
       });
       setSuccessMsg("Account created! Redirecting to login...");
       setTimeout(() => navigate("/login"), 1500);
@@ -219,9 +228,10 @@ export default function StudentRegister() {
                 onChange={handleChange} options={GENDERS} error={errors.gender} />
             </div>
 
-            <Field label="Mentor name" name="mentorName" type="text" placeholder="Dr. Priya Sharma"
+            {/* CHANGED: label + hint updated, no longer marked required */}
+            <Field label="Mentor name (optional)" name="mentorName" type="text" placeholder="Leave blank to auto-assign"
               value={form.mentorName} onChange={handleChange} error={errors.mentorName}
-              hint="Enter your assigned faculty mentor's name" />
+              hint="We'll try to auto-assign a mentor based on your roll number and gender. Only fill this in if you already know your mentor." />
 
             <div style={styles.row}>
               <PasswordField label="Password" name="password" value={form.password}

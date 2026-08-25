@@ -440,6 +440,32 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
     }
 
     const hostelId = await getHostelIdForStaff(req.user.id);
+
+    // DUPLICATE CHECK: this exact leave may have already been scanned
+    // before (accidental double-tap, camera catching the same code
+    // twice, etc). There's no leaveId column on HostelLeaveRecord to
+    // check directly, so we match on the same combination that
+    // uniquely identifies this leave: roll number + exact start/end
+    // dates + source "qr". If a match exists, return it instead of
+    // creating a second row.
+    const alreadyScanned = await prisma.hostelLeaveRecord.findFirst({
+      where: {
+        hostelId,
+        rollNumber: leave.student.rollNumber || "",
+        leaveStartDate: leave.startDate,
+        leaveEndDate: leave.endDate,
+        source: "qr",
+      },
+    });
+
+    if (alreadyScanned) {
+      return res.status(200).json({
+        success: true,
+        record: alreadyScanned,
+        message: "This leave was already scanned and recorded — no duplicate created.",
+      });
+    }
+
     const createdRecord = await prisma.hostelLeaveRecord.create({
       data: {
         hostelId,

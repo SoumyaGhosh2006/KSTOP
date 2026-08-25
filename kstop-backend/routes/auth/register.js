@@ -62,7 +62,7 @@ function isEmailValidForRole(email, role) {
 
   if (role === "mentor") {
     // KIIT teacher/faculty emails end with fcs@kiit.ac.in
-    // e.g. john.fcs@kiit.ac.in or priya.fcs@kiit.ac.in
+    // e.g. johnfcs@kiit.ac.in or priyafcs@kiit.ac.in (no dot before fcs)
     return email.endsWith("fcs@kiit.ac.in");
   }
 
@@ -105,8 +105,13 @@ async function register(req, res) {
       rollNumber,
       hostelId,
       gender,
-      mentorName,
+      mentorName, // now OPTIONAL for students — see step 7d below
       assignedHostelId,
+      // Mentor-only — the roll number range + gender they're allotted.
+      // e.g. rollRangeStart=2205001, rollRangeEnd=2205050, genderScope="Male"
+      rollRangeStart,
+      rollRangeEnd,
+      genderScope,
       // Note: hostel role needs NO extra fields.
       // Their email (e.g. kp1@kiit.ac.in) already identifies which hostel they are.
     } = req.body;
@@ -149,11 +154,42 @@ async function register(req, res) {
     }
 
     // ── 5. Student-specific required fields ───────────────────
+    // NOTE: mentorName is no longer required here. Mentors are now
+    // auto-assigned by roll number range + gender (see step 7d) —
+    // mentorName only needs to be typed manually as a fallback if
+    // no mentor's range covers this student yet.
     if (role === "student") {
-      if (!rollNumber || !hostelId || !gender || !mentorName) {
+      if (!rollNumber || !hostelId || !gender) {
         return res.status(400).json({
           success: false,
-          message: "Students must also provide: rollNumber, hostelId, gender, and mentorName.",
+          message: "Students must also provide: rollNumber, hostelId, and gender.",
+        });
+      }
+    }
+
+    // ── 5c. Mentor-specific required fields ────────────────────
+    // The mentor picks the roll number range they've been allotted
+    // and which gender they mentor. Students inside that range with
+    // that gender get auto-assigned to them at registration.
+    if (role === "mentor") {
+      if (!rollRangeStart || !rollRangeEnd || !genderScope) {
+        return res.status(400).json({
+          success: false,
+          message: "Mentors must also provide: rollRangeStart, rollRangeEnd, and genderScope.",
+        });
+      }
+      if (genderScope !== "Male" && genderScope !== "Female") {
+        return res.status(400).json({
+          success: false,
+          message: 'genderScope must be exactly "Male" or "Female".',
+        });
+      }
+      const startNum = parseInt(rollRangeStart, 10);
+      const endNum = parseInt(rollRangeEnd, 10);
+      if (Number.isNaN(startNum) || Number.isNaN(endNum) || startNum > endNum) {
+        return res.status(400).json({
+          success: false,
+          message: "rollRangeStart must be a number less than or equal to rollRangeEnd.",
         });
       }
     }
@@ -256,6 +292,32 @@ async function register(req, res) {
       }
     }
 
+    // ── 7c. Mentor: warn if this exact range+gender is already taken ──
+    // We only check for an EXACT duplicate, not partial overlap —
+    // proper overlap detection is more complex than this demo needs.
+    // Overlapping-but-not-identical ranges are a known limitation,
+    // not something this checks for.
+    let resolvedMentorName = mentorName?.trim() || null;
+
+    if (role === "mentor") {
+      const startNum = parseInt(rollRangeStart, 10);
+      const endNum = parseInt(rollRangeEnd, 10);
+      const duplicateRange = await prisma.user.findFirst({
+        where: {
+          role: "mentor",
+          mentorRollRangeStart: startNum,
+          mentorRollRangeEnd: endNum,
+          mentorGenderScope: genderScope,
+        },
+      });
+      if (duplicateRange) {
+        return res.status(400).json({
+          success: false,
+          message: `Another mentor already covers roll numbers ${startNum}–${endNum} for ${genderScope} students.`,
+        });
+      }
+    }
+
     let studentHostel = null;
     let assignedHostel = null;
 
@@ -265,6 +327,34 @@ async function register(req, res) {
         update: {},
         create: { name: hostelId.trim() },
       });
+
+      // ── 7d. Auto-assign a mentor by roll number range + gender ──
+      // Find a mentor whose range covers this roll number AND whose
+      // genderScope matches this student (or is null, meaning "any
+      // gender" — used by the dev/demo mentor).
+      const rollAsInt = parseInt(rollNumber.trim(), 10);
+      if (!Number.isNaN(rollAsInt)) {
+        const matchedMentor = await prisma.user.findFirst({
+          where: {
+            role: "mentor",
+            mentorRollRangeStart: { lte: rollAsInt },
+            mentorRollRangeEnd: { gte: rollAsInt },
+            OR: [{ mentorGenderScope: gender }, { mentorGenderScope: null }],
+          },
+        });
+        if (matchedMentor) {
+          resolvedMentorName = matchedMentor.name; // auto-match wins over manual entry
+        }
+      }
+
+      // No auto-match AND nothing typed manually — can't proceed,
+      // every student needs a mentor for the leave-approval flow.
+      if (!resolvedMentorName) {
+        return res.status(400).json({
+          success: false,
+          message: "No mentor is currently allotted your roll number range. Please enter your mentor's name manually, or contact your hostel admin.",
+        });
+      }
     }
 
     if (role === "hostel" && assignedHostelId) {
@@ -296,7 +386,13 @@ async function register(req, res) {
         rollNumber: rollNumber.trim(),
         hostelId: studentHostel.id,           // FK -> Hostel.id
         gender,             // must match Gender enum: Male | Female | PreferNotToSay
-        mentorName: mentorName.trim(),
+        mentorName: resolvedMentorName,       // auto-matched by range+gender, or manual fallback
+      }),
+
+      ...(role === "mentor" && {
+        mentorRollRangeStart: parseInt(rollRangeStart, 10),
+        mentorRollRangeEnd: parseInt(rollRangeEnd, 10),
+        mentorGenderScope: genderScope, // "Male" or "Female" — validated above
       }),
 
       ...(role === "hostel" && assignedHostel && {
