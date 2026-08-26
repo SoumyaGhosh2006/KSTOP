@@ -1,0 +1,1000 @@
+/* ─────────────────────────────────────────────
+   mentor-dashboard.css
+   Mentor Dashboard Styles
+
+   Same design system as student-dashboard.css /
+   parent-dashboard.css: beige background, dark
+   sidebar with orange accent, white rounded
+   cards, orange/green/red action buttons.
+   ───────────────────────────────────────────── */
+
+.mentor-shell {
+  min-height: 100vh;
+  background: #f8f4e8;
+  color: #252422;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ── Fixed brand logo (top-left), same treatment as the student shell ── */
+.mentor-top-brand {
+  position: fixed;
+  top: 20px;
+  left: 78px;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  pointer-events: none;
+}
+
+.mentor-top-brand__name {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #252422;
+  line-height: 1;
+}
+
+/* ── Hamburger button — always visible, opens on click OR hover ── */
+.mentor-menu-button {
+  position: fixed;
+  top: 22px;
+  left: 16px;
+  z-index: 45;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(37, 36, 34, 0.92);
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 14px;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(37, 36, 34, 0.18);
+  transition: background 0.15s;
+}
+
+.mentor-menu-button span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: #fffcf2;
+}
+
+.mentor-menu-button.is-open {
+  background: #eb5e28;
+}
+
+.mentor-sidebar-hover-zone {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 28px;
+  z-index: 20;
+}
+
+.mentor-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  border: 0;
+  background: rgba(37, 36, 34, 0.34);
+}
+
+/* ── Sidebar ── */
+.mentor-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 250px;
+  background: #252422;
+  color: #fffcf2;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+}
+
+.mentor-sidebar.is-open {
+  transform: translateX(0);
+}
+
+.mentor-sidebar__brand {
+  padding: 46px 12px 28px;
+}
+
+.mentor-sidebar__brand p {
+  margin: 0 0 4px;
+  color: rgba(255, 252, 242, 0.72);
+  font-size: 14px;
+}
+
+.mentor-sidebar__brand span {
+  color: rgba(255, 252, 242, 0.68);
+  font-size: 13px;
+}
+
+.mentor-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mentor-sidebar__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 252, 242, 0.82);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  padding: 13px 14px;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mentor-sidebar__link:hover {
+  color: #fffcf2;
+  background: rgba(255, 252, 242, 0.06);
+}
+
+.mentor-sidebar__link.is-active {
+  background: #71341c;
+  border-left-color: #eb5e28;
+  color: #fffcf2;
+}
+
+.mentor-sidebar__logout {
+  margin-top: auto;
+  border: 1px solid rgba(255, 252, 242, 0.16);
+  background: transparent;
+  color: #fffcf2;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mentor-sidebar__logout:hover {
+  background: rgba(255, 252, 242, 0.08);
+}
+
+/* ── Main content ── */
+.mentor-main {
+  padding: 28px 24px 40px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.mentor-header {
+  padding-top: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.mentor-header__copy p {
+  margin: 0 0 5px;
+  color: #7d746b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mentor-header__copy h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.mentor-back-link {
+  border: 0;
+  background: transparent;
+  color: #eb5e28;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── Surfaces / cards ── */
+.mentor-surface {
+  background: #ffffff;
+  border: 1px solid #d8d1bf;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(37, 36, 34, 0.04);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.mentor-surface:hover {
+  box-shadow: 0 14px 32px rgba(37, 36, 34, 0.08);
+}
+
+.mentor-dashboard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Hero card ── */
+.mentor-hero-card {
+  background: linear-gradient(135deg, #f35f24 0%, #eb5e28 100%);
+  color: #fffcf2;
+  padding: 22px 24px;
+  border: none;
+}
+
+.mentor-hero-card h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.mentor-hero-card p {
+  margin: 8px 0 0;
+  opacity: 0.88;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mentor-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+/* ── Panel card ── */
+.mentor-panel-card {
+  padding: 18px 22px;
+}
+
+.mentor-panel-card h3 {
+  margin: 4px 0 6px;
+  font-size: 18px;
+}
+
+.mentor-panel-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+/* ── Alert / focus callout ── */
+.mentor-alert-card {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+}
+
+.mentor-alert-card.is-calm {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.mentor-alert-card__copy strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+  color: #252422;
+}
+
+.mentor-alert-card__copy span {
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+/* ── Grids ── */
+.mentor-two-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.mentor-three-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.mentor-four-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── Tiles ── */
+.mentor-tile {
+  padding: 16px 18px;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid #d8d1bf;
+}
+
+.mentor-tile__icon {
+  font-size: 20px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.mentor-tile h3 {
+  margin: 6px 0 4px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.mentor-tile p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6f6a63;
+}
+
+.mentor-tile small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9c9489;
+}
+
+/* ── Quick actions ── */
+.mentor-quick-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ── */
+.mentor-primary-button,
+.mentor-secondary-button,
+.mentor-danger-button,
+.mentor-dark-button {
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s;
+}
+
+.mentor-primary-button {
+  background: #22c55e;
+  color: white;
+}
+
+.mentor-primary-button:hover {
+  background: #16a34a;
+}
+
+.mentor-secondary-button {
+  background: #f35f24;
+  color: #fffcf2;
+}
+
+.mentor-secondary-button:hover {
+  background: #e04d1a;
+}
+
+.mentor-danger-button {
+  background: #ef4444;
+  color: white;
+}
+
+.mentor-danger-button:hover {
+  background: #dc2626;
+}
+
+.mentor-dark-button {
+  background: #252422;
+  color: #fffcf2;
+}
+
+.mentor-dark-button:hover {
+  background: #eb5e28;
+}
+
+.mentor-primary-button:disabled,
+.mentor-secondary-button:disabled,
+.mentor-danger-button:disabled,
+.mentor-dark-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mentor-primary-button:active,
+.mentor-secondary-button:active,
+.mentor-danger-button:active,
+.mentor-dark-button:active {
+  transform: scale(0.98);
+}
+
+/* ── Status pills ── */
+.mentor-status-pill {
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  display: inline-block;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.mentor-status-pill.is-pending,
+.mentor-status-pill.is-pending_parent,
+.mentor-status-pill.is-pending_mentor,
+.mentor-status-pill.is-open {
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+.mentor-status-pill.is-approved,
+.mentor-status-pill.is-resolved,
+.mentor-status-pill.is-confirmed {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.mentor-status-pill.is-rejected,
+.mentor-status-pill.is-disputed {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+.mentor-status-pill.is-progress,
+.mentor-status-pill.is-in_progress {
+  color: #1e40af;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
+.mentor-status-pill.is-urgent {
+  color: #fffcf2;
+  background: #eb5e28;
+  border: 1px solid #eb5e28;
+}
+
+/* ── Search / filter row ── */
+.mentor-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #d8d1bf;
+  font-size: 14px;
+  background: #ffffff;
+  color: #252422;
+  font-family: inherit;
+}
+
+.mentor-search-input:focus {
+  outline: none;
+  border-color: #eb5e28;
+}
+
+.mentor-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mentor-filter-pill {
+  border: 1px solid #d8d1bf;
+  background: #ffffff;
+  color: #6f6a63;
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mentor-filter-pill:hover {
+  border-color: #eb5e28;
+  color: #eb5e28;
+}
+
+.mentor-filter-pill.is-active {
+  background: #252422;
+  border-color: #252422;
+  color: #fffcf2;
+}
+
+/* ── Reusable expandable card system ──
+   Used by Leave Queue, Mentees List, and Grievances so each
+   page shares one visual language and one set of styles. */
+.mentor-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mentor-expandable-card {
+  padding: 18px 20px;
+}
+
+.mentor-expandable-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mentor-expandable-card__who h3 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+
+.mentor-expandable-card__who p {
+  margin: 0;
+  font-size: 13px;
+  color: #8c857c;
+}
+
+.mentor-expandable-card__badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* The nudge sentence explaining a parent already approved this leave */
+.mentor-nudge-banner {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff1e8;
+  border: 1px solid #f8d3bb;
+  color: #9a3f13;
+  font-size: 13px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mentor-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin-top: 14px;
+}
+
+.mentor-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mentor-detail-row .label {
+  font-size: 11px;
+  color: #9c9489;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mentor-detail-row .value {
+  font-size: 14px;
+  color: #252422;
+}
+
+.mentor-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* Inline reject-reason box that opens beneath the buttons */
+.mentor-reason-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mentor-reason-box textarea {
+  width: 100%;
+  min-height: 64px;
+  border-radius: 8px;
+  border: 1px solid #d8d1bf;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.mentor-reason-box textarea:focus {
+  outline: none;
+  border-color: #eb5e28;
+}
+
+.mentor-reason-box__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* The interactive dropdown toggle button */
+.mentor-dropdown-toggle {
+  margin-top: 14px;
+  width: 100%;
+  background: #f8f4e8;
+  border: 1px dashed #d8d1bf;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6f6a63;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mentor-dropdown-toggle:hover {
+  background: #f1e9d8;
+  border-color: #eb5e28;
+  color: #eb5e28;
+}
+
+.mentor-dropdown-toggle__chevron {
+  display: inline-block;
+  transition: transform 180ms ease;
+}
+
+.mentor-dropdown-toggle.is-open .mentor-dropdown-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+/* The panel that slides open beneath the toggle */
+.mentor-dropdown-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #fbf8f0;
+  border: 1px solid #ecdfc4;
+  animation: mentor-dropdown-open 200ms ease;
+}
+
+@keyframes mentor-dropdown-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mentor-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.mentor-mini-stat {
+  background: #ffffff;
+  border: 1px solid #ecdfc4;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.mentor-mini-stat .label {
+  font-size: 11px;
+  color: #9c9489;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.mentor-mini-stat .value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #252422;
+}
+
+.mentor-mini-stat .value.is-low {
+  color: #dc2626;
+}
+
+.mentor-history-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7d746b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+}
+
+.mentor-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mentor-history-item {
+  background: #ffffff;
+  border: 1px solid #ecdfc4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.mentor-history-item__dates {
+  color: #6f6a63;
+}
+
+.mentor-empty-inline {
+  font-size: 13px;
+  color: #9c9489;
+  font-style: italic;
+}
+
+/* ── Empty state ── */
+.mentor-empty-state {
+  text-align: center;
+  padding: 44px 20px;
+}
+
+.mentor-empty-state h3 {
+  margin: 0 0 8px;
+  color: #514c45;
+  font-size: 18px;
+}
+
+.mentor-empty-state p {
+  margin: 0;
+  color: #8c857c;
+  font-size: 14px;
+}
+
+/* ── Messages page ── */
+.mentor-message-card {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mentor-message-card__from {
+  font-size: 13px;
+  font-weight: 700;
+  color: #eb5e28;
+}
+
+.mentor-message-card__body {
+  font-size: 14px;
+  color: #252422;
+  line-height: 1.5;
+}
+
+.mentor-message-card__time {
+  font-size: 12px;
+  color: #9c9489;
+}
+
+.mentor-info-note {
+  font-size: 12px;
+  color: #9c9489;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── Notifications page ── */
+.mentor-notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mentor-notif-item {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  transition: background 0.15s;
+}
+
+.mentor-notif-item.is-unread {
+  border-left: 3px solid #eb5e28;
+}
+
+.mentor-notif-item.is-read {
+  border-left: 3px solid transparent;
+  opacity: 0.7;
+}
+
+.mentor-notif-content {
+  flex: 1;
+}
+
+.mentor-notif-content p {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: #252422;
+  line-height: 1.4;
+}
+
+.mentor-notif-content small {
+  font-size: 12px;
+  color: #8c857c;
+}
+
+.mentor-notif-mark-btn {
+  background: #252422;
+  color: #fffcf2;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mentor-notif-mark-btn:hover {
+  background: #eb5e28;
+}
+
+/* ── Loading spinner ── */
+.mentor-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #ddd;
+  border-top-color: #eb5e28;
+  border-radius: 50%;
+  animation: mentor-spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes mentor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mentor-loading-row {
+  display: flex;
+  align-items: center;
+  color: #8c857c;
+  font-size: 14px;
+}
+
+/* ── Notification bell (header) ── */
+.mentor-notif-bell {
+  position: relative;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.mentor-notif-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.mentor-nav-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* ── Desktop spacing so content clears the fixed brand/hamburger ── */
+@media (min-width: 901px) {
+  .mentor-main {
+    padding-left: 118px;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 900px) {
+  .mentor-top-brand {
+    top: 14px;
+    left: 72px;
+    min-height: 44px;
+  }
+
+  .mentor-top-brand__name {
+    font-size: 28px;
+  }
+
+  .mentor-menu-button {
+    top: 16px;
+    left: 12px;
+    width: 44px;
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  .mentor-sidebar {
+    width: min(82vw, 276px);
+  }
+
+  .mentor-main {
+    padding: 88px 16px 32px;
+  }
+
+  .mentor-header__copy h1 {
+    font-size: 19px;
+  }
+
+  .mentor-three-grid,
+  .mentor-two-grid,
+  .mentor-four-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mentor-detail-grid,
+  .mentor-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mentor-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mentor-expandable-card__badges {
+    justify-content: flex-start;
+  }
+}
