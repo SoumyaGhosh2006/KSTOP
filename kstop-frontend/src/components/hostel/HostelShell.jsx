@@ -6,26 +6,24 @@ import "../../page/dashboard/hostel/hostel-dashboard.css";
 const NAV_LINKS = [
   { to: "/dashboard/hostel", label: "Dashboard", end: true },
   { to: "/dashboard/hostel/mess-menu", label: "Upload Menu" },
+  { to: "/dashboard/hostel/mess-feedback", label: "Mess Feedback" },
   { to: "/dashboard/hostel/scan-qr", label: "Scan QR" },
   { to: "/dashboard/hostel/leave-records", label: "Leave Records" },
   { to: "/dashboard/hostel/grievances", label: "Grievances" },
 ];
 
-/**
- * Provides a responsive layout for hostel portal pages.
- * @param {string} title - The page heading.
- * @param {string} [eyebrow] - Optional text displayed above the page heading.
- * @param {React.ReactNode} children - The page content.
- * @return {JSX.Element} The hostel page layout.
- */
+/*
+  HostelShell wraps every hostel page with:
+  - A sidebar that slides in when the user hovers the left edge (desktop)
+  - A hamburger button for mobile tap-to-open
+  - A header with eyebrow + title
+  - A content area (children)
+*/
 export default function HostelShell({ title, eyebrow, children }) {
   // sidebarOpen is only used on mobile (click to open)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  /**
-   * Signs the user out and navigates to the login page.
-   */
   function logout() {
     localStorage.removeItem("kstop_token");
     localStorage.removeItem("kstop_user");

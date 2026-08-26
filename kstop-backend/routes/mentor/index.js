@@ -279,7 +279,7 @@ router.get("/grievances", asyncHandler(async (req, res) => {
 }));
 
 // ── 6. GET /api/mentor/messages ──
-// All parent → mentor messages addressed to this mentor, newest first.
+// All parent → s addressed to this mentor, newest first.
 router.get("/messages", asyncHandler(async (req, res) => {
   const messages = await prisma.parentMessage.findMany({
     where: { mentorId: req.user.id },
