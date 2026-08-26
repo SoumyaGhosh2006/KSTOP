@@ -24,6 +24,11 @@ import MyLeaves from "./page/dashboard/student/MyLeaves";
 import MessMenu from "./page/dashboard/student/MessMenu";
 import MyGrievances from "./page/dashboard/student/MyGrievances";
 import MentorDashboard from "./page/dashboard/mentor/MentorDashboard";
+import LeaveQueue from "./page/dashboard/mentor/LeaveQueue";
+import MenteesList from "./page/dashboard/mentor/MenteesList";
+import MentorGrievances from "./page/dashboard/mentor/MentorGrievances";
+import MentorMessages from "./page/dashboard/mentor/MentorMessages";
+import MentorNotifications from "./page/dashboard/mentor/MentorNotifications";
 import HostelDashboard from "./page/dashboard/hostel/HostelDashboard";
 import MessMenuUpload from "./page/dashboard/hostel/MessMenuUpload";
 import HostelQrScanner from "./page/dashboard/hostel/HostelQrScanner";
@@ -102,6 +107,46 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="mentor">
                 <MentorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/leave-queue"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <LeaveQueue />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/mentees"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <MenteesList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/grievances"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <MentorGrievances />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/messages"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <MentorMessages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/notifications"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <MentorNotifications />
               </ProtectedRoute>
             }
           />
