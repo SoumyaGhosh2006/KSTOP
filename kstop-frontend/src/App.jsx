@@ -31,6 +31,7 @@ import MentorMessages from "./page/dashboard/mentor/MentorMessages";
 import MentorNotifications from "./page/dashboard/mentor/MentorNotifications";
 import HostelDashboard from "./page/dashboard/hostel/HostelDashboard";
 import MessMenuUpload from "./page/dashboard/hostel/MessMenuUpload";
+import MessFeedback from "./page/dashboard/hostel/MessFeedback";
 import HostelQrScanner from "./page/dashboard/hostel/HostelQrScanner";
 import HostelLeaveRecords from "./page/dashboard/hostel/HostelLeaveRecords";
 import HostelGrievances from "./page/dashboard/hostel/HostelGrievances";
@@ -165,6 +166,14 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="hostel">
                 <MessMenuUpload />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/hostel/mess-feedback"
+            element={
+              <ProtectedRoute requiredRole="hostel">
+                <MessFeedback />
               </ProtectedRoute>
             }
           />

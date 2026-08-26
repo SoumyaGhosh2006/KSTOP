@@ -15,9 +15,12 @@
 const express = require("express");
 const cors    = require("cors");
 const path    = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config(); // loads your .env file into process.env
 
-const app = express();
+const app = express();  
+const httpServer = http.createServer(app);
 
 // ── Middleware ────────────────────────────────────────────────
 
@@ -43,7 +46,8 @@ const hostelRoutes = require("./routes/hostel/index");
 const leaveRoutes = require("./routes/leave/index");
 const parentRoutes = require("./routes/parent/index");
 const mentorRoutes = require("./routes/mentor/index");
-
+const grievanceRoutes = require("./routes/grievance/index");
+const { setupParentMentorChat } = require("./socket/parentMentorChat");
 // Mount the auth router at /api/auth
 // So POST /api/auth/login, POST /api/auth/register, etc.
 app.use("/api/auth", authRoutes);
@@ -51,6 +55,7 @@ app.use("/api/hostel", hostelRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/mentor", mentorRoutes);
+app.use("/api/grievance", grievanceRoutes);
 
 // ── Health check route ────────────────────────────────────────
 // Visit http://localhost:5000/api/health to confirm the server is running
@@ -93,10 +98,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Parent <-> Mentor Socket.IO connection
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  },
+});
+
+setupParentMentorChat(io);
+
 // ── Start the server ──────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`✅ K-STOP backend running on http://localhost:${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
 });
