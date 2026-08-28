@@ -10,7 +10,7 @@ datasource db {
 enum Role {
   student
   mentor
-  hostel   
+  hostel
   parent
 }
 
@@ -67,7 +67,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Student-only fields
-  rollNumber           String?  @unique
+  rollNumber           String? @unique
   hostelId             String?
   gender               Gender?
   mentorName           String?
@@ -94,7 +94,6 @@ model User {
   grievancesAsMentor  Grievance[]          @relation("MentorGrievances")
   notifications       Notification[]
   passwordResetTokens PasswordResetToken[]
-  foodRatings         FoodRating[]
   sentAnnouncements   Announcement[]
 }
 
@@ -103,32 +102,32 @@ model Hostel {
   name      String   @unique
   createdAt DateTime @default(now())
 
-  students     User[]             @relation("StudentHostel")
-  hostelStaff  User[]             @relation("HostelStaff")
+  students     User[]              @relation("StudentHostel")
+  hostelStaff  User[]              @relation("HostelStaff")
   grievances   Grievance[]
   messMenus    MessMenu[]
   leaveRecords HostelLeaveRecord[]
 }
 
 model Leave {
-  id             String      @id @default(cuid())
-  studentId      String
-  mentorId       String
-  type           LeaveType
-  startDate      DateTime
-  endDate        DateTime
-  purpose        String
-  place          String
-  contactNumber  String
-  arrivalDetails String?
-  parentApproved Boolean     @default(false)
-  mentorApproved Boolean     @default(false)
-  status         LeaveStatus @default(PENDING_PARENT)
+  id              String      @id @default(cuid())
+  studentId       String
+  mentorId        String
+  type            LeaveType
+  startDate       DateTime
+  endDate         DateTime
+  purpose         String
+  place           String
+  contactNumber   String
+  arrivalDetails  String?
+  parentApproved  Boolean     @default(false)
+  mentorApproved  Boolean     @default(false)
+  status          LeaveStatus @default(PENDING_PARENT)
   rejectionReason String?
-  qrToken        String?
-  qrCode         String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  qrToken         String?
+  qrCode          String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   student User @relation("StudentLeaves", fields: [studentId], references: [id])
   mentor  User @relation("MentorLeaves", fields: [mentorId], references: [id])
@@ -138,18 +137,18 @@ model Leave {
 }
 
 model Grievance {
-  id          String            @id @default(cuid())
-  studentId   String
-  hostelId    String
-  mentorId    String
-  title       String
-  description String
-  category    GrievanceCategory
-  staffStatus   StaffGrievanceStatus   @default(OPEN)
-  studentStatus StudentGrievanceStatus @default(PENDING)
-  priorityScore Int @default(0)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                 String                 @id @default(cuid())
+  studentId          String
+  hostelId           String
+  mentorId           String
+  title              String
+  description        String
+  category           GrievanceCategory
+  staffStatus        StaffGrievanceStatus   @default(OPEN)
+  studentStatus      StudentGrievanceStatus @default(PENDING)
+  priorityScore      Int                    @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
   staffResolvedAt    DateTime?
   studentRespondedAt DateTime?
 
@@ -169,25 +168,10 @@ model MessMenu {
   uploadedBy String
   createdAt  DateTime @default(now())
 
-  hostel      Hostel       @relation(fields: [hostelId], references: [id])
-  foodRatings FoodRating[]
+  // Each menu belongs to one hostel.
+  hostel Hostel @relation(fields: [hostelId], references: [id])
 
   @@index([hostelId])
-}
-
-model FoodRating {
-  id        String   @id @default(cuid())
-  menuId    String
-  studentId String
-  foodItem  String
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-
-  menu    MessMenu @relation(fields: [menuId], references: [id])
-  student User     @relation(fields: [studentId], references: [id])
-
-  @@unique([menuId, studentId, foodItem])
 }
 
 model HostelLeaveRecord {

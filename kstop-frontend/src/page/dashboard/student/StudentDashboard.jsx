@@ -78,7 +78,7 @@ export default function StudentDashboard() {
 
           <article className="student-surface student-tile">
             <span className="student-eyebrow" style={{ color: "#7d7469" }}>
-              Today&apos;s menu | CV Raman
+              Today&apos;s menu
             </span>
             <p>Rajma chawal, jeera aloo, curd, salad</p>
             <small>Read-only preview</small>
