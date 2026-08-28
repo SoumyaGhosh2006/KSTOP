@@ -49,9 +49,11 @@ export default function StudentShell({ title, backTo, children }) {
   }
 
   // These fallback labels keep the shell readable even when user data is incomplete.
-  const name = user?.name || "Soumya";
-  const hostelLabel = user?.hostel ? `${user.hostel} Hostel` : "CV Raman Hostel";
-  const roomLabel = user?.room ? `Room ${user.room}` : "Room 214";
+  const name = user?.name || "Student";
+
+  // Do not show fake hostel or room data.
+  // Real hostel information should come from the database.
+  const hostelLabel = user?.hostel?.name || user?.hostelName || "";
   const showBack = Boolean(backTo);
   const currentPath = location.pathname;
 
@@ -120,7 +122,11 @@ export default function StudentShell({ title, backTo, children }) {
         </nav>
 
         {/* Logout lives in the shell so every student page gets the same exit action. */}
-        <button type="button" className="student-sidebar__logout" onClick={handleLogout}>
+        <button
+          type="button"
+          className="student-sidebar__logout"
+          onClick={handleLogout}
+        >
           Log out
         </button>
       </aside>
@@ -129,14 +135,18 @@ export default function StudentShell({ title, backTo, children }) {
       <main className="student-main">
         <header className="student-header">
           {showBack ? (
-            <button type="button" className="student-back-link" onClick={() => navigate(backTo)}>
+            <button
+              type="button"
+              className="student-back-link"
+              onClick={() => navigate(backTo)}
+            >
               {"<- Home"}
             </button>
           ) : null}
 
           <div className="student-header__copy">
             <h1>{title}</h1>
-            {!showBack ? <p>{hostelLabel} | {roomLabel}</p> : null}
+            {showBack && hostelLabel ? <p>{hostelLabel}</p> : null}
           </div>
         </header>
 

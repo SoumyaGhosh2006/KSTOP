@@ -6,7 +6,6 @@
 //    GET    /api/hostel/summary              → numbers for the dashboard cards
 //    POST   /api/hostel/mess-menu            → upload a mess menu image
 //    GET    /api/hostel/mess-menus           → list all menus (students use this too)
-//    POST   /api/hostel/mess-menus/:id/rate  → a student rates a menu
 //    GET    /api/hostel/leave-records        → list scanned/manual leave rows
 //    POST   /api/hostel/leave-records        → add one leave row manually
 //    POST   /api/hostel/scan-leave-qr        → store leave data from a QR code
@@ -329,57 +328,28 @@ router.post(
 );
 
 // ── GET /api/hostel/mess-menus ────────────────────────────────
-// Every logged-in role can view menus; students use this list too.
+// Every logged-in user can view uploaded hostel mess menus.
 router.get("/mess-menus", asyncHandler(async (req, res) => {
   const menus = await prisma.messMenu.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      hostel: { select: { id: true, name: true } },
-      foodRatings: { select: { rating: true } },
+    orderBy: {
+      createdAt: "desc",
     },
-  });
-
-  res.json({ success: true, menus });
-}));
-
-// ── POST /api/hostel/mess-menus/:menuId/rate ──────────────────
-// A student rates the menu of THEIR OWN hostel (1–5 stars).
-// Rating the same menu again simply updates the old rating.
-router.post("/mess-menus/:menuId/rate", authorizeRoles("student"), asyncHandler(async (req, res) => {
-  const rating = Number(req.body.rating);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return res.status(400).json({ success: false, message: "Rating must be between 1 and 5 stars." });
-  }
-
-  const user = await getHostelUser(req.user.id);
-  const menu = await prisma.messMenu.findUnique({ where: { id: req.params.menuId } });
-
-  if (!menu || menu.hostelId !== user?.hostelId) {
-    return res.status(403).json({
-      success: false,
-      message: "Only students from this hostel can rate this menu.",
-    });
-  }
-
-  const foodRating = await prisma.foodRating.upsert({
-    where: {
-      menuId_studentId_foodItem: {
-        menuId: menu.id,
-        studentId: req.user.id,
-        foodItem: "Overall menu",
+    include: {
+      hostel: {
+        select: {
+          id: true,
+          name: true,
+        },
       },
     },
-    update: { rating },
-    create: {
-      menuId: menu.id,
-      studentId: req.user.id,
-      foodItem: "Overall menu",
-      rating,
-    },
   });
 
-  res.json({ success: true, rating: foodRating });
+  res.json({
+    success: true,
+    menus,
+  });
 }));
+
 
 // ── GET /api/hostel/leave-records ─────────────────────────────
 // Returns all leave rows for this hostel, newest first.
