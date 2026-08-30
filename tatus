@@ -1,0 +1,16 @@
+* [33mbf740c5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m remove mess rating feature and clean up related code
+* [33mf706ba7[m[33m ([m[1;31morigin/soumya[m[33m)[m mentor msg
+*   [33mcd54184[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #20 from SoumyaGhosh2006/aish
+[32m|[m[33m\[m  
+[32m|[m * [33m06c577a[m changes
+[32m|[m[32m/[m  
+*   [33mded5215[m Merge pull request #19 from SoumyaGhosh2006/soumya
+[34m|[m[35m\[m  
+[34m|[m *   [33m04d1ed1[m[33m ([m[1;32msoumya[m[33m)[m fgh
+[34m|[m [36m|[m[1;31m\[m  
+[34m|[m * [1;31m\[m   [33m84e8c3b[m Merge pull request #15 from SoumyaGhosh2006/coderabbitai/docstrings/6663555
+[34m|[m [1;32m|[m[1;33m\[m [1;31m\[m  
+[34m|[m [1;32m|[m * [1;31m|[m [33mce55160[m[33m ([m[1;31morigin/coderabbitai/docstrings/6663555[m[33m)[m 📝 Add docstrings to `soumya`
+[34m|[m [1;32m|[m[1;32m/[m [1;31m/[m  
+* [1;32m|[m [1;31m|[m [33mc19cea4[m qr code and mentor backend
+* [1;32m|[m [1;31m|[m [33m17db54f[m db fix
