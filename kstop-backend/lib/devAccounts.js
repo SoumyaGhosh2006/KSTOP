@@ -2,64 +2,103 @@
 //  lib/devAccounts.js
 //  LOCATION: kstop-backend/lib/devAccounts.js
 //
-//  The Login page has "quick login" buttons for development that
-//  use fake tokens (dev-token-student, dev-token-hostel). Those
-//  tokens pass the auth middleware, but without a matching row in
-//  the database every database write for these users fails.
+//  Development-only account definitions and helpers.
 //
-//  This helper creates those demo accounts in the database the
-//  first time they are needed. It ONLY runs in development and
-//  ONLY for the two known dev ids — real accounts are untouched.
+//  This module is the single source of truth for development
+//  authentication identities used by the backend.
+//
+//  IMPORTANT:
+//  - These accounts are only valid in development mode.
+//  - They are never production credentials.
+//  - Production users are resolved from the database.
 // ─────────────────────────────────────────────
 
 const prisma = require("./prismaClient");
 
-// A bcrypt-looking placeholder (correct 60-char format).
-// These accounts can never log in with a password; the value just
-// has to exist because the password column is required.
+// A bcrypt-looking placeholder.
+// Development accounts cannot log in using a password.
+// The value only exists because the password column is required.
 const DEV_PASSWORD_HASH =
   "$2b$12$devaccountnopasswordlogin0000000000000000000000000000";
+
+// Single source of truth for development authentication identities.
+//
+// Other parts of the backend should use this instead of creating
+// their own copies of development tokens and IDs.
+const DEV_ACCOUNTS = Object.freeze({
+  hostel: Object.freeze({
+    token: "dev-token-hostel",
+    id: "hostel-test-123",
+    role: "hostel",
+  }),
+
+  student: Object.freeze({
+    token: "dev-token-student",
+    id: "student-test-123",
+    role: "student",
+  }),
+
+  parent: Object.freeze({
+    token: "dev-token-parent",
+    id: "parent-test-123",
+    role: "parent",
+  }),
+
+  mentor: Object.freeze({
+    token: "dev-token-mentor",
+    id: "mentor-test-123",
+    role: "mentor",
+  }),
+});
 
 function isDevelopment() {
   return (process.env.NODE_ENV || "development") === "development";
 }
 
-// Makes sure the dev mentor exists. The dev student's leave
-// requests get assigned to this mentor.
-//
-// FIXED ID: this used to be upserted by email only, which meant it
-// got a random auto-generated id every time the database was reset —
-// impossible to write a fixed "dev-token-mentor" login for that.
-// Every other dev account (student/parent/hostel) already uses a
-// fixed id, so this now matches that same pattern.
+function getDevAccountByToken(token) {
+  if (!token) return null;
+
+  return (
+    Object.values(DEV_ACCOUNTS).find(
+      (account) => account.token === token
+    ) || null
+  );
+}
+
+function getDevAccountByRole(role) {
+  if (!role) return null;
+
+  return DEV_ACCOUNTS[String(role).toLowerCase()] || null;
+}
+
+// Makes sure the dev mentor exists.
 async function ensureDevMentor() {
+  const account = DEV_ACCOUNTS.mentor;
+
   return prisma.user.upsert({
-    where: { id: "mentor-test-123" },
-    // Self-heal the roll range too, so "Quick Login as Mentor"
-    // always has a working demo range even after a reset.
-    // (mentorGenderScope is left null for the dev mentor on purpose —
-    // it means "matches any gender", so the dev student always finds
-    // this mentor no matter what gender they were seeded with.)
+    where: { id: account.id },
+
     update: {
       mentorRollRangeStart: 2205001,
       mentorRollRangeEnd: 2205050,
     },
+
     create: {
-      id: "mentor-test-123",
+      id: account.id,
       name: "Dev Mentor",
       email: "dev.mentor.fcs@kiit.ac.in",
       password: DEV_PASSWORD_HASH,
-      role: "mentor",
+      role: account.role,
       mentorRollRangeStart: 2205001,
       mentorRollRangeEnd: 2205050,
     },
   });
 }
 
-// Makes sure the dev student exists (linked to a demo hostel and
-// the demo mentor), so "Quick Login as Student" can submit real
-// leave requests during development.
+// Makes sure the dev student exists.
 async function ensureDevStudent() {
+  const account = DEV_ACCOUNTS.student;
+
   const hostel = await prisma.hostel.upsert({
     where: { name: "Hostel KP-1" },
     update: {},
@@ -69,10 +108,8 @@ async function ensureDevStudent() {
   await ensureDevMentor();
 
   return prisma.user.upsert({
-    where: { id: "student-test-123" },
-    // Re-apply these every time too (same self-healing idea as the
-    // parent's childRollNumber below) so demo data never silently
-    // goes missing after a schema change again.
+    where: { id: account.id },
+
     update: {
       rollNumber: "2205001",
       mentorName: "Dev Mentor",
@@ -80,12 +117,13 @@ async function ensureDevStudent() {
       attendancePercentage: 72,
       academicDetails: "CGPA 8.1 · 0 backlogs · CSE Core",
     },
+
     create: {
-      id: "student-test-123",
+      id: account.id,
       name: "Asha Kumar",
       email: "asha.kumar@kiit.ac.in",
       password: DEV_PASSWORD_HASH,
-      role: "student",
+      role: account.role,
       rollNumber: "2205001",
       gender: "PreferNotToSay",
       mentorName: "Dev Mentor",
@@ -96,53 +134,60 @@ async function ensureDevStudent() {
   });
 }
 
-// Call this with req.user.id before doing database work for a
-// student. In development it creates the dev account if missing;
-// in production it does nothing.
+// Development-only helper for student database access.
 async function ensureDevStudentAccount(userId) {
-  if (!isDevelopment() || userId !== "student-test-123") return;
+  if (!isDevelopment() || userId !== DEV_ACCOUNTS.student.id) {
+    return;
+  }
+
   await ensureDevStudent();
 }
 
 async function ensureDevParent() {
-  await ensureDevStudent(); // ensure the child exists first
+  const account = DEV_ACCOUNTS.parent;
+
+  await ensureDevStudent();
 
   return prisma.user.upsert({
-    where: { id: "parent-test-123" },
-    // "update" runs even if the row already exists (e.g. someone added
-    // it by hand in Prisma Studio). We always re-set childRollNumber
-    // here so the parent → child link can never silently go missing
-    // again, like it did when the column got dropped and re-added.
-    update: { childRollNumber: "2205001" },
+    where: { id: account.id },
+
+    update: {
+      childRollNumber: "2205001",
+    },
+
     create: {
-      id: "parent-test-123",
+      id: account.id,
       name: "Parent User",
       email: "parent@example.com",
       password: DEV_PASSWORD_HASH,
-      role: "parent",
+      role: account.role,
       childRollNumber: "2205001",
     },
   });
 }
 
+// Development-only helper for parent database access.
 async function ensureDevParentAccount(userId) {
-  if (!isDevelopment() || userId !== "parent-test-123") return;
+  if (!isDevelopment() || userId !== DEV_ACCOUNTS.parent.id) {
+    return;
+  }
+
   await ensureDevParent();
 }
 
-// Call this with req.user.id before doing database work for a
-// mentor. In development it creates/self-heals the dev mentor;
-// in production it does nothing.
+// Development-only helper for mentor database access.
 async function ensureDevMentorAccount(userId) {
-  if (!isDevelopment() || userId !== "mentor-test-123") return;
+  if (!isDevelopment() || userId !== DEV_ACCOUNTS.mentor.id) {
+    return;
+  }
+
   await ensureDevMentor();
 }
 
-// BUG FIX (still applies): this file used to have TWO `module.exports`
-// lines. In JavaScript, the second one silently overwrites the first.
-// Only one export statement should ever exist in a file — keep every
-// function in this same object as you add more.
 module.exports = {
+  DEV_ACCOUNTS,
+  getDevAccountByToken,
+  getDevAccountByRole,
   ensureDevStudentAccount,
   ensureDevParentAccount,
   ensureDevMentorAccount,
