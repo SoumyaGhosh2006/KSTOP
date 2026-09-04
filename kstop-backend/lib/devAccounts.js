@@ -51,8 +51,14 @@ const DEV_ACCOUNTS = Object.freeze({
   }),
 });
 
-function isDevelopment() {
-  return (process.env.NODE_ENV || "development") === "development";
+function isDevAuthEnabled() {
+  const isDevelopment =
+    String(process.env.NODE_ENV || "").toLowerCase() === "development";
+
+  const devAuthEnabled =
+    String(process.env.DEV_AUTH_ENABLED || "").toLowerCase() === "true";
+
+  return isDevelopment && devAuthEnabled;
 }
 
 function getDevAccountByToken(token) {
@@ -136,7 +142,7 @@ async function ensureDevStudent() {
 
 // Development-only helper for student database access.
 async function ensureDevStudentAccount(userId) {
-  if (!isDevelopment() || userId !== DEV_ACCOUNTS.student.id) {
+  if (!isDevAuthEnabled() || userId !== DEV_ACCOUNTS.student.id) {
     return;
   }
 
@@ -168,7 +174,7 @@ async function ensureDevParent() {
 
 // Development-only helper for parent database access.
 async function ensureDevParentAccount(userId) {
-  if (!isDevelopment() || userId !== DEV_ACCOUNTS.parent.id) {
+  if (!isDevAuthEnabled() || userId !== DEV_ACCOUNTS.parent.id) {
     return;
   }
 
@@ -177,7 +183,7 @@ async function ensureDevParentAccount(userId) {
 
 // Development-only helper for mentor database access.
 async function ensureDevMentorAccount(userId) {
-  if (!isDevelopment() || userId !== DEV_ACCOUNTS.mentor.id) {
+  if (!isDevAuthEnabled() || userId !== DEV_ACCOUNTS.mentor.id) {
     return;
   }
 
@@ -187,6 +193,7 @@ async function ensureDevMentorAccount(userId) {
 module.exports = {
   DEV_ACCOUNTS,
   getDevAccountByToken,
+  isDevAuthEnabled,
   getDevAccountByRole,
   ensureDevStudentAccount,
   ensureDevParentAccount,

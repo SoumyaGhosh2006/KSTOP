@@ -29,7 +29,10 @@
 
 const jwt = require("jsonwebtoken");
 
-const { getDevAccountByToken } = require("../lib/devAccounts");
+const {
+  getDevAccountByToken,
+  isDevAuthEnabled,
+} = require("../lib/devAccounts");
 
 // ── verifyToken ───────────────────────────────────────────────
 // This middleware runs before any protected route handler.
@@ -54,9 +57,7 @@ const verifyToken = (req, res, next) => {
 
   // Dev-only mock tokens used by the quick login buttons on the frontend.
   // These are intentionally not real JWTs, so they must be accepted only in dev.
-  const isDevelopment =
-    (process.env.NODE_ENV || "development") === "development";
-  if (isDevelopment) {
+  if (isDevAuthEnabled()) {
     const devAccount = getDevAccountByToken(token);
 
     if (devAccount) {
