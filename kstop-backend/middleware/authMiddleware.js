@@ -29,12 +29,10 @@
 
 const jwt = require("jsonwebtoken");
 
-const DEV_TOKENS = {
-  "dev-token-hostel": { id: "hostel-test-123", role: "hostel" },
-  "dev-token-student": { id: "student-test-123", role: "student" },
-  "dev-token-parent": { id: "parent-test-123", role: "parent" },
-  "dev-token-mentor": { id: "mentor-test-123", role: "mentor" },
-};
+const {
+  getDevAccountByToken,
+  isDevAuthEnabled,
+} = require("../lib/devAccounts");
 
 // ── verifyToken ───────────────────────────────────────────────
 // This middleware runs before any protected route handler.
@@ -59,10 +57,17 @@ const verifyToken = (req, res, next) => {
 
   // Dev-only mock tokens used by the quick login buttons on the frontend.
   // These are intentionally not real JWTs, so they must be accepted only in dev.
-  const isDevelopment = (process.env.NODE_ENV || "development") === "development";
-  if (isDevelopment && DEV_TOKENS[token]) {
-    req.user = DEV_TOKENS[token];
-    return next();
+  if (isDevAuthEnabled()) {
+    const devAccount = getDevAccountByToken(token);
+
+    if (devAccount) {
+      req.user = {
+        id: devAccount.id,
+        role: devAccount.role,
+      };
+
+      return next();
+    }
   }
 
   try {
@@ -78,7 +83,9 @@ const verifyToken = (req, res, next) => {
   } catch (err) {
     // Token expired → tell frontend to redirect to login
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ error: "Session expired. Please log in again." });
+      return res
+        .status(401)
+        .json({ error: "Session expired. Please log in again." });
     }
     // Token was tampered with or invalid
     return res.status(401).json({ error: "Invalid token." });
