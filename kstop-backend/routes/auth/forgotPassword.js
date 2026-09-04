@@ -2,24 +2,14 @@
 //  routes/auth/forgotPassword.js
 //  POST /api/auth/forgot-password
 //
-//  Accepts an email, generates a secure reset token, stores it
-//  with a 15-minute expiry, and emails the reset link via Resend.
-//  Always responds with 200 so we don't leak which emails exist.
-//
-//  Request body:
-//    email
-//
-//  Returns:
-//    200 — generic success message (always, even if email not found)
-//    400 — missing email
-//    500 — unexpected server error
+//  Generates a secure reset token, stores it with a 15-minute
+//  expiry, and sends the reset link through the email service.
+//  Always responds with 200 for unknown emails.
 // ─────────────────────────────────────────────
 
 const crypto = require("crypto");
-const { Resend } = require("resend");
 const prisma = require("../../lib/prismaClient");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendEmail } = require("../../services/email");
 
 async function forgotPassword(req, res) {
   try {
@@ -39,7 +29,6 @@ async function forgotPassword(req, res) {
       message: "If that email is registered, a password reset link has been sent.",
     };
 
-    // ── Look up user (silently ignore if not found) ────────
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -48,12 +37,9 @@ async function forgotPassword(req, res) {
       return res.status(200).json(genericResponse);
     }
 
-    // ── Generate secure token ───────────────────────────────
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Schema allows multiple tokens per user (userId is not unique),
-    // so clean up any old ones first, then create a fresh one.
     await prisma.passwordResetToken.deleteMany({
       where: { userId: user.id },
     });
@@ -62,13 +48,10 @@ async function forgotPassword(req, res) {
       data: { userId: user.id, token: resetToken, expiresAt },
     });
 
-    // ── Build reset URL ─────────────────────────────────────
     const frontendBase = process.env.FRONTEND_URL || "http://localhost:5173";
     const resetUrl = `${frontendBase}/reset-password?token=${resetToken}`;
 
-    // ── Send email via Resend ───────────────────────────────
-    const { error: resendError } = await resend.emails.send({
-      from: "K-STOP <onboarding@resend.dev>", // swap for verified domain later
+    await sendEmail({
       to: normalizedEmail,
       subject: "Reset Your K-STOP Password",
       html: `
@@ -129,13 +112,7 @@ async function forgotPassword(req, res) {
       `,
     });
 
-    if (resendError) {
-      console.error("[forgot-password] Resend error:", resendError);
-      // Don't expose the internal failure — still return generic success
-    }
-
     return res.status(200).json(genericResponse);
-
   } catch (error) {
     console.error("[forgot-password] Error:", error.message);
     return res.status(500).json({
