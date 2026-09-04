@@ -3,22 +3,11 @@
 //  POST /api/auth/send-otp
 //
 //  Call this BEFORE register. Generates a 6-digit OTP,
-//  stores it with a 10-minute expiry, and emails it via Resend.
-//
-//  Request body:
-//    email — the email the user is trying to register with
-//
-//  Returns:
-//    200 — OTP sent successfully
-//    400 — missing/invalid email
-//    409 — email already registered
-//    500 — unexpected server error
+//  stores it with a 10-minute expiry, and emails it.
 // ─────────────────────────────────────────────
 
-const { Resend } = require("resend");
 const prisma = require("../../lib/prismaClient");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendEmail } = require("../../services/email");
 
 async function sendOtp(req, res) {
   try {
@@ -33,7 +22,6 @@ async function sendOtp(req, res) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // ── Check if email is already registered ──────────────
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -45,20 +33,16 @@ async function sendOtp(req, res) {
       });
     }
 
-    // ── Generate 6-digit OTP ────────────────────────────────
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // ── Upsert OTP record (one active OTP per email at a time) ──
     await prisma.otp.upsert({
       where: { email: normalizedEmail },
       update: { otp, expiresAt, verified: false },
       create: { email: normalizedEmail, otp, expiresAt, verified: false },
     });
 
-    // ── Send email via Resend ───────────────────────────────
-    const { error: resendError } = await resend.emails.send({
-      from: "K-STOP <onboarding@resend.dev>", // swap for verified domain later
+    await sendEmail({
       to: normalizedEmail,
       subject: "Your K-STOP Verification Code",
       html: `
@@ -114,27 +98,15 @@ async function sendOtp(req, res) {
       `,
     });
 
-    if (resendError) {
-      console.error("[send-otp] Resend error:", resendError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send OTP email. Try again.",
-      });
-    }
-
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully. Check your email.",
     });
-
   } catch (error) {
-    console.error("[send-otp] Error:", error);
-    console.error("[send-otp] Error Message:", error.message);
-    console.error("[send-otp] Error Stack:", error.stack);
+    console.error("[send-otp] Error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again.",
-      error: error.message, // DEBUG: Remove in production
     });
   }
 }
