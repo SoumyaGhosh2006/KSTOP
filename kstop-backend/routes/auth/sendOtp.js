@@ -3,11 +3,28 @@
 //  POST /api/auth/send-otp
 //
 //  Call this BEFORE register. Generates a 6-digit OTP,
-//  stores it with a 10-minute expiry, and emails it.
+//  stores a keyed hash with a 10-minute expiry, and emails it.
 // ─────────────────────────────────────────────
 
+const crypto = require("crypto");
 const prisma = require("../../lib/prismaClient");
 const { sendEmail } = require("../../services/email");
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+
+function hashOtp(otp) {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error("JWT_SECRET is required for OTP protection.");
+  }
+
+  return crypto
+    .createHmac("sha256", secret)
+    .update(String(otp).trim())
+    .digest("hex");
+}
 
 async function sendOtp(req, res) {
   try {
@@ -33,13 +50,39 @@ async function sendOtp(req, res) {
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const existingOtp = await prisma.otp.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingOtp) {
+      const elapsed = Date.now() - new Date(existingOtp.createdAt).getTime();
+
+      if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+        return res.status(429).json({
+          success: false,
+          message: "Please wait before requesting another verification code.",
+        });
+      }
+    }
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+    const hashedOtp = hashOtp(otp);
 
     await prisma.otp.upsert({
       where: { email: normalizedEmail },
-      update: { otp, expiresAt, verified: false },
-      create: { email: normalizedEmail, otp, expiresAt, verified: false },
+      update: {
+        otp: hashedOtp,
+        expiresAt,
+        verified: false,
+        createdAt: new Date(),
+      },
+      create: {
+        email: normalizedEmail,
+        otp: hashedOtp,
+        expiresAt,
+        verified: false,
+      },
     });
 
     try {
