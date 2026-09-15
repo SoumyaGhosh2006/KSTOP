@@ -14,6 +14,7 @@ import MentorRegister from "./page/auth/MentorRegister";
 import ParentRegister from "./page/auth/ParentRegister";
 import HostelRegister from "./page/auth/HostelRegister";
 import Login from "./page/Login";
+import DevLogin from "./page/DevLogin";
 import ForgotPassword from "./page/ForgotPassword";
 import ResetPassword from "./page/ResetPassword";
 
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/register/parent" element={<ParentRegister />} />
           <Route path="/register/hostel" element={<HostelRegister />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/dev-login" element={<DevLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
