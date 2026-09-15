@@ -1,8 +1,8 @@
 const crypto = require("crypto");
 const prisma = require("../../lib/prismaClient");
 
-const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
+const attemptCounts = new Map();
 
 function hashOtp(otp) {
   const secret = process.env.JWT_SECRET;
@@ -26,6 +26,10 @@ function safeEqual(left, right) {
   }
 
   return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function clearAttempts(email) {
+  attemptCounts.delete(email);
 }
 
 async function verifyRegistrationOtp(req, res, next) {
@@ -59,6 +63,7 @@ async function verifyRegistrationOtp(req, res, next) {
     }
 
     if (new Date() > new Date(otpRecord.expiresAt)) {
+      clearAttempts(normalizedEmail);
       await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
       return res.status(400).json({
         success: false,
@@ -66,36 +71,29 @@ async function verifyRegistrationOtp(req, res, next) {
       });
     }
 
-    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
-      await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
-      return res.status(429).json({
-        success: false,
-        message: "Too many verification attempts. Please request a new code.",
-      });
-    }
-
     const submittedHash = hashOtp(otp);
     const valid = safeEqual(otpRecord.otp, submittedHash);
 
     if (!valid) {
-      const nextAttempts = otpRecord.attempts + 1;
+      const nextAttempts = (attemptCounts.get(normalizedEmail) || 0) + 1;
+      attemptCounts.set(normalizedEmail, nextAttempts);
 
       if (nextAttempts >= MAX_OTP_ATTEMPTS) {
+        clearAttempts(normalizedEmail);
         await prisma.otp.deleteMany({ where: { email: normalizedEmail } });
-      } else {
-        await prisma.otp.update({
-          where: { email: normalizedEmail },
-          data: { attempts: { increment: 1 } },
+        return res.status(429).json({
+          success: false,
+          message: "Too many verification attempts. Please request a new code.",
         });
       }
 
       return res.status(400).json({
         success: false,
-        message: nextAttempts >= MAX_OTP_ATTEMPTS
-          ? "Too many verification attempts. Please request a new code."
-          : "Incorrect code. Please check and try again.",
+        message: "Incorrect code. Please check and try again.",
       });
     }
+
+    clearAttempts(normalizedEmail);
 
     // register.js already performs the final OTP state checks and deletes
     // the record after account creation. Pass the verified hash forward so
@@ -111,4 +109,4 @@ async function verifyRegistrationOtp(req, res, next) {
   }
 }
 
-module.exports = { verifyRegistrationOtp, hashOtp, OTP_TTL_MS, MAX_OTP_ATTEMPTS };
+module.exports = { verifyRegistrationOtp, hashOtp, MAX_OTP_ATTEMPTS };
