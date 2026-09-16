@@ -65,6 +65,7 @@ export default function ResetPassword() {
 
   return (
     <main className="reset-page">
+      <meta name="referrer" content="no-referrer" />
       <style>{styles}</style>
       <header className="reset-brand" aria-label="K-STOP">
         <div className="reset-logo" aria-hidden="true">K</div>
