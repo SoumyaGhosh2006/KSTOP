@@ -16,6 +16,13 @@ const { register }       = require("./register");
 const { login }          = require("./login");
 const { forgotPassword } = require("./forgotPassword");
 const { resetPassword }  = require("./resetPassword");
+const {
+  loginIpLimiter,
+  loginEmailLimiter,
+  forgotPasswordIpLimiter,
+  forgotPasswordEmailLimiter,
+  resetPasswordIpLimiter,
+} = require("../../middleware/authRateLimit");
 
 // ── POST /api/auth/send-otp ───────────────────────────────────
 // Step 1 of registration.
@@ -30,15 +37,21 @@ router.post("/register", verifyRegistrationOtp, register);
 
 // ── POST /api/auth/login ──────────────────────────────────────
 // Universal login for all roles (student, mentor, hostel, parent).
-router.post("/login", login);
+// Two limits are applied: one per source IP and one per account identity.
+router.post("/login", loginIpLimiter, loginEmailLimiter, login);
 
 // ── POST /api/auth/forgot-password ───────────────────────────
 // User enters their email. The endpoint must not reveal whether the
-// account exists.
-router.post("/forgot-password", forgotPassword);
+// account exists. Both IP and email-based limits reduce abuse.
+router.post(
+  "/forgot-password",
+  forgotPasswordIpLimiter,
+  forgotPasswordEmailLimiter,
+  forgotPassword
+);
 
 // ── POST /api/auth/reset-password ────────────────────────────
 // User submits their new password along with the token from the email link.
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", resetPasswordIpLimiter, resetPassword);
 
 module.exports = router;
