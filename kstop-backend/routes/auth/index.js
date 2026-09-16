@@ -19,6 +19,8 @@ const { resetPassword }  = require("./resetPassword");
 const {
   loginIpLimiter,
   loginEmailLimiter,
+  sendOtpIpLimiter,
+  sendOtpEmailLimiter,
   forgotPasswordIpLimiter,
   forgotPasswordEmailLimiter,
   resetPasswordIpLimiter,
@@ -27,7 +29,7 @@ const {
 // ── POST /api/auth/send-otp ───────────────────────────────────
 // Step 1 of registration.
 // Sends a 6-digit code to the user's email.
-router.post("/send-otp", sendOtp);
+router.post("/send-otp", sendOtpIpLimiter, sendOtpEmailLimiter, sendOtp);
 
 // ── POST /api/auth/register ───────────────────────────────────
 // The OTP middleware verifies the submitted code before the existing
