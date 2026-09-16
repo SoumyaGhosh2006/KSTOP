@@ -34,6 +34,23 @@ const loginEmailLimiter = rateLimit({
   message: genericLimitMessage,
 });
 
+const sendOtpIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: genericLimitMessage,
+});
+
+const sendOtpEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  keyGenerator: emailKeyGenerator,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: genericLimitMessage,
+});
+
 const forgotPasswordIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -62,6 +79,8 @@ const resetPasswordIpLimiter = rateLimit({
 module.exports = {
   loginIpLimiter,
   loginEmailLimiter,
+  sendOtpIpLimiter,
+  sendOtpEmailLimiter,
   forgotPasswordIpLimiter,
   forgotPasswordEmailLimiter,
   resetPasswordIpLimiter,
