@@ -248,3 +248,16 @@ model ParentMessage {
   @@index([parentId])
   @@index([mentorId])
 }
+
+// Official parent records used to verify parent registration details.
+// A parent must match email + phone + child roll number before an OTP is sent.
+model ParentRegistry {
+  id              String   @id @default(cuid())
+  email           String
+  phone           String
+  childRollNumber String
+  createdAt       DateTime @default(now())
+
+  @@unique([email, phone])
+  @@index([childRollNumber])
+}
