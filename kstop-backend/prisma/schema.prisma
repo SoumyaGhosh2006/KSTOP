@@ -251,6 +251,8 @@ model ParentMessage {
 
 // Official parent records used to verify parent registration details.
 // A parent must match email + phone + child roll number before an OTP is sent.
+// The child roll number is part of the uniqueness constraint so one parent
+// can legitimately be registered for multiple children.
 model ParentRegistry {
   id              String   @id @default(cuid())
   email           String
@@ -258,6 +260,6 @@ model ParentRegistry {
   childRollNumber String
   createdAt       DateTime @default(now())
 
-  @@unique([email, phone])
+  @@unique([email, phone, childRollNumber])
   @@index([childRollNumber])
 }
