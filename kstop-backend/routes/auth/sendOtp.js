@@ -28,7 +28,7 @@ function hashOtp(otp) {
 
 async function sendOtp(req, res) {
   try {
-    const { email } = req.body;
+    const { email, role, phone, rollNumber } = req.body || {};
 
     if (!email || typeof email !== "string") {
       return res.status(400).json({
@@ -38,6 +38,39 @@ async function sendOtp(req, res) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Parent registration is allowed only when the supplied
+    // email + phone + child roll number match an official registry record.
+    // Keep the response generic so this endpoint cannot be used to
+    // discover which parent records exist.
+    if (role === "parent") {
+      if (
+        typeof phone !== "string" ||
+        typeof rollNumber !== "string" ||
+        !phone.trim() ||
+        !rollNumber.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Parent email, phone number, and child roll number are required.",
+        });
+      }
+
+      const parentRecord = await prisma.parentRegistry.findFirst({
+        where: {
+          email: normalizedEmail,
+          phone: phone.trim(),
+          childRollNumber: rollNumber.trim(),
+        },
+      });
+
+      if (!parentRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Parent details do not match our records.",
+        });
+      }
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
