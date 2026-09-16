@@ -1,4 +1,4 @@
-const { rateLimit } = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 
 const genericLimitMessage = {
   success: false,
@@ -12,7 +12,7 @@ function emailKeyGenerator(req) {
     return `email:${email.trim().toLowerCase()}`;
   }
 
-  return `ip:${req.ip}`;
+  return `ip:${ipKeyGenerator(req.ip || req.socket.remoteAddress || "unknown")}`;
 }
 
 const loginIpLimiter = rateLimit({
