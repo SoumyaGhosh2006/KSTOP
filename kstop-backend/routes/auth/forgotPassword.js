@@ -2,14 +2,18 @@
 //  routes/auth/forgotPassword.js
 //  POST /api/auth/forgot-password
 //
-//  Generates a secure reset token, stores it with a 15-minute
-//  expiry, and sends the reset link through the email service.
+//  Generates a secure reset token, stores only its hash with a
+//  15-minute expiry, and sends the raw token through the email service.
 //  Always responds with a generic success message.
 // ─────────────────────────────────────────────
 
 const crypto = require("crypto");
 const prisma = require("../../lib/prismaClient");
 const { sendEmail } = require("../../services/email");
+
+function hashResetToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 async function forgotPassword(req, res) {
   try {
@@ -38,6 +42,7 @@ async function forgotPassword(req, res) {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = hashResetToken(resetToken);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.passwordResetToken.deleteMany({
@@ -45,7 +50,7 @@ async function forgotPassword(req, res) {
     });
 
     await prisma.passwordResetToken.create({
-      data: { userId: user.id, token: resetToken, expiresAt },
+      data: { userId: user.id, token: resetTokenHash, expiresAt },
     });
 
     const frontendBase = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -62,8 +67,7 @@ async function forgotPassword(req, res) {
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;padding:40px 0;">
                 <tr>
                   <td align="center">
-                    <table width="520" cellpadding="0" cellspacing="0"
-                           style="background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden;">
+                    <table width="520" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden;">
                       <tr>
                         <td style="background:#EB5E28;padding:28px 40px;">
                           <p style="margin:0;font-size:22px;font-weight:700;color:#FFFCF2;letter-spacing:1px;">K-STOP</p>
@@ -79,29 +83,20 @@ async function forgotPassword(req, res) {
                             <strong style="color:#EB5E28;">15 minutes</strong>.
                           </p>
                           <div style="text-align:center;margin-bottom:32px;">
-                            <a href="${resetUrl}"
-                               style="display:inline-block;background:#EB5E28;color:#FFFCF2;text-decoration:none;
-                                      padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+                            <a href="${resetUrl}" style="display:inline-block;background:#EB5E28;color:#FFFCF2;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
                               Reset My Password
                             </a>
                           </div>
-                          <p style="margin:0 0 8px;font-size:12px;color:#403D39;">
-                            If the button doesn't work, copy and paste this link:
-                          </p>
-                          <p style="margin:0 0 28px;font-size:12px;color:#EB5E28;word-break:break-all;">
-                            ${resetUrl}
-                          </p>
+                          <p style="margin:0 0 8px;font-size:12px;color:#403D39;">If the button doesn't work, copy and paste this link:</p>
+                          <p style="margin:0 0 28px;font-size:12px;color:#EB5E28;word-break:break-all;">${resetUrl}</p>
                           <p style="margin:0;font-size:13px;color:#403D39;line-height:1.6;">
-                            If you didn't request a password reset, ignore this email —
-                            your password will not change.
+                            If you didn't request a password reset, ignore this email — your password will not change.
                           </p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding:20px 40px;border-top:1px solid #2a2a2a;">
-                          <p style="margin:0;font-size:12px;color:#403D39;text-align:center;">
-                            © ${new Date().getFullYear()} K-STOP · KIIT University
-                          </p>
+                          <p style="margin:0;font-size:12px;color:#403D39;text-align:center;">© ${new Date().getFullYear()} K-STOP · KIIT University</p>
                         </td>
                       </tr>
                     </table>
@@ -117,7 +112,7 @@ async function forgotPassword(req, res) {
 
       // The token must not remain usable when its email was not delivered.
       await prisma.passwordResetToken.deleteMany({
-        where: { token: resetToken },
+        where: { token: resetTokenHash },
       });
     }
 
