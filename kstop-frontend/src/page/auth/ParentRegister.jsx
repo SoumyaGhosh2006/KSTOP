@@ -75,7 +75,12 @@ export default function ParentRegister() {
     setOtpLoading(true);
     setOtpError("");
     try {
-      await api.post("/auth/send-otp", { email: form.email.trim().toLowerCase() });
+      await api.post("/auth/send-otp", {
+        email: form.email.trim().toLowerCase(),
+        role: "parent",
+        phone: form.phone.trim(),
+        rollNumber: form.rollNumber.trim(),
+      });
       setStep(2);
       setSuccessMsg(`Verification code sent to ${form.email}`);
     } catch (err) {

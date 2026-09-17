@@ -30,7 +30,7 @@ async function forgotPassword(req, res) {
 
     const genericResponse = {
       success: true,
-      message: "If that email is registered, a password reset link has been sent.",
+      message: "Password reset link has been sent.",
     };
 
     const user = await prisma.user.findUnique({
