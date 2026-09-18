@@ -411,6 +411,15 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
 
     const hostelId = await getHostelIdForStaff(req.user.id);
 
+    // AUTHORIZATION: a hostel may only record QR leave for students
+    // assigned to that same hostel. The QR token alone is not enough.
+    if (leave.student.hostelId !== hostelId) {
+      return res.status(403).json({
+        success: false,
+        message: "This leave request does not belong to your hostel.",
+      });
+    }
+
     // DUPLICATE CHECK: this exact leave may have already been scanned
     // before (accidental double-tap, camera catching the same code
     // twice, etc). There's no leaveId column on HostelLeaveRecord to
