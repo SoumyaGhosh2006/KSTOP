@@ -474,7 +474,54 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
     return res.status(201).json({ success: true, record: createdRecord });
   }
 
-  const result = await createLeaveRecordFromBody(req.user.id, { ...payload, source: "qr" });
+  // Direct-data QR payloads must still be authorized against the
+  // authenticated hostel. A QR code containing a student's fields is
+  // untrusted client input and cannot establish hostel ownership.
+  const hostelId = await getHostelIdForStaff(req.user.id);
+  const rollNumber = String(payload.rollNumber || payload.rollNo || "").trim();
+
+  if (!rollNumber) {
+    return res.status(400).json({
+      success: false,
+      message: "The QR code does not contain a student roll number.",
+    });
+  }
+
+  const student = await prisma.user.findFirst({
+    where: {
+      role: "student",
+      rollNumber,
+    },
+    select: {
+      id: true,
+      name: true,
+      rollNumber: true,
+      hostelId: true,
+    },
+  });
+
+  if (!student) {
+    return res.status(404).json({
+      success: false,
+      message: "The student in this QR code was not found.",
+    });
+  }
+
+  if (student.hostelId !== hostelId) {
+    return res.status(403).json({
+      success: false,
+      message: "This student does not belong to your hostel.",
+    });
+  }
+
+  const result = await createLeaveRecordFromBody(req.user.id, {
+    ...payload,
+    // Use the server-verified student identity instead of trusting
+    // studentName/rollNumber values supplied by the QR payload.
+    studentName: student.name,
+    rollNumber: student.rollNumber,
+    source: "qr",
+  });
 
   if (result.error) {
     return res.status(400).json({ success: false, message: result.error });
