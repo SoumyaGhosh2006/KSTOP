@@ -175,6 +175,17 @@ async function getHostelIdForStaff(userId) {
 
   if (user.assignedHostelId) return user.assignedHostelId;
 
+  // A production hostel account must have an explicit hostel assignment.
+  // Do not infer tenant scope from the account name: that would turn an
+  // unassigned account into its own hostel and weaken authorization.
+  if (!isDevelopment() || userId !== DEV_HOSTEL_USER.id) {
+    throw new Error(
+      "Your hostel account is not assigned to a hostel. Please contact the administrator."
+    );
+  }
+
+  // Development quick-login is the only exception. It needs a stable
+  // demo hostel so the existing development workflow keeps working.
   const hostel = await prisma.hostel.upsert({
     where: { name: user.name },
     update: {},
