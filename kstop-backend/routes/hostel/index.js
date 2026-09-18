@@ -514,20 +514,54 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
     });
   }
 
-  const result = await createLeaveRecordFromBody(req.user.id, {
+  const recordData = normalizeLeaveRecord({
     ...payload,
     // Use the server-verified student identity instead of trusting
     // studentName/rollNumber values supplied by the QR payload.
     studentName: student.name,
     rollNumber: student.rollNumber,
-    source: "qr",
   });
 
-  if (result.error) {
-    return res.status(400).json({ success: false, message: result.error });
+  const missingFields = validateLeaveRecord(recordData);
+
+  if (missingFields.length) {
+    return res.status(400).json({
+      success: false,
+      message: `Missing or invalid fields: ${missingFields.join(", ")}`,
+    });
   }
 
-  return res.status(201).json({ success: true, record: result.record });
+  // DUPLICATE CHECK: direct-data QR scans must not create multiple
+  // hostel records for the same leave. Authorization is performed
+  // above first, so this check cannot be used to cross hostel
+  // boundaries.
+  const alreadyScanned = await prisma.hostelLeaveRecord.findFirst({
+    where: {
+      hostelId,
+      rollNumber: student.rollNumber || "",
+      leaveStartDate: recordData.leaveStartDate,
+      leaveEndDate: recordData.leaveEndDate,
+      source: "qr",
+    },
+  });
+
+  if (alreadyScanned) {
+    return res.status(200).json({
+      success: true,
+      record: alreadyScanned,
+      message: "This leave was already scanned and recorded — no duplicate created.",
+    });
+  }
+
+  const createdRecord = await prisma.hostelLeaveRecord.create({
+    data: {
+      ...recordData,
+      hostelId,
+      source: "qr",
+    },
+  });
+
+  return res.status(201).json({ success: true, record: createdRecord });
 }));
 
 // ── DELETE /api/hostel/leave-records ──────────────────────────
