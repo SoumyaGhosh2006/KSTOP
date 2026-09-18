@@ -175,6 +175,17 @@ async function getHostelIdForStaff(userId) {
 
   if (user.assignedHostelId) return user.assignedHostelId;
 
+  // A production hostel account must have an explicit hostel assignment.
+  // Do not infer tenant scope from the account name: that would turn an
+  // unassigned account into its own hostel and weaken authorization.
+  if (!isDevelopment() || userId !== DEV_HOSTEL_USER.id) {
+    throw new Error(
+      "Your hostel account is not assigned to a hostel. Please contact the administrator."
+    );
+  }
+
+  // Development quick-login is the only exception. It needs a stable
+  // demo hostel so the existing development workflow keeps working.
   const hostel = await prisma.hostel.upsert({
     where: { name: user.name },
     update: {},
@@ -411,6 +422,15 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
 
     const hostelId = await getHostelIdForStaff(req.user.id);
 
+    // AUTHORIZATION: a hostel may only record QR leave for students
+    // assigned to that same hostel. The QR token alone is not enough.
+    if (leave.student.hostelId !== hostelId) {
+      return res.status(403).json({
+        success: false,
+        message: "This leave request does not belong to your hostel.",
+      });
+    }
+
     // DUPLICATE CHECK: this exact leave may have already been scanned
     // before (accidental double-tap, camera catching the same code
     // twice, etc). There's no leaveId column on HostelLeaveRecord to
@@ -454,13 +474,94 @@ router.post("/scan-leave-qr", authorizeRoles("hostel"), asyncHandler(async (req,
     return res.status(201).json({ success: true, record: createdRecord });
   }
 
-  const result = await createLeaveRecordFromBody(req.user.id, { ...payload, source: "qr" });
+  // Direct-data QR payloads must still be authorized against the
+  // authenticated hostel. A QR code containing a student's fields is
+  // untrusted client input and cannot establish hostel ownership.
+  const hostelId = await getHostelIdForStaff(req.user.id);
+  const rollNumber = String(payload.rollNumber || payload.rollNo || "").trim();
 
-  if (result.error) {
-    return res.status(400).json({ success: false, message: result.error });
+  if (!rollNumber) {
+    return res.status(400).json({
+      success: false,
+      message: "The QR code does not contain a student roll number.",
+    });
   }
 
-  return res.status(201).json({ success: true, record: result.record });
+  const student = await prisma.user.findFirst({
+    where: {
+      role: "student",
+      rollNumber,
+    },
+    select: {
+      id: true,
+      name: true,
+      rollNumber: true,
+      hostelId: true,
+    },
+  });
+
+  if (!student) {
+    return res.status(404).json({
+      success: false,
+      message: "The student in this QR code was not found.",
+    });
+  }
+
+  if (student.hostelId !== hostelId) {
+    return res.status(403).json({
+      success: false,
+      message: "This student does not belong to your hostel.",
+    });
+  }
+
+  const recordData = normalizeLeaveRecord({
+    ...payload,
+    // Use the server-verified student identity instead of trusting
+    // studentName/rollNumber values supplied by the QR payload.
+    studentName: student.name,
+    rollNumber: student.rollNumber,
+  });
+
+  const missingFields = validateLeaveRecord(recordData);
+
+  if (missingFields.length) {
+    return res.status(400).json({
+      success: false,
+      message: `Missing or invalid fields: ${missingFields.join(", ")}`,
+    });
+  }
+
+  // DUPLICATE CHECK: direct-data QR scans must not create multiple
+  // hostel records for the same leave. Authorization is performed
+  // above first, so this check cannot be used to cross hostel
+  // boundaries.
+  const alreadyScanned = await prisma.hostelLeaveRecord.findFirst({
+    where: {
+      hostelId,
+      rollNumber: student.rollNumber || "",
+      leaveStartDate: recordData.leaveStartDate,
+      leaveEndDate: recordData.leaveEndDate,
+      source: "qr",
+    },
+  });
+
+  if (alreadyScanned) {
+    return res.status(200).json({
+      success: true,
+      record: alreadyScanned,
+      message: "This leave was already scanned and recorded — no duplicate created.",
+    });
+  }
+
+  const createdRecord = await prisma.hostelLeaveRecord.create({
+    data: {
+      ...recordData,
+      hostelId,
+      source: "qr",
+    },
+  });
+
+  return res.status(201).json({ success: true, record: createdRecord });
 }));
 
 // ── DELETE /api/hostel/leave-records ──────────────────────────

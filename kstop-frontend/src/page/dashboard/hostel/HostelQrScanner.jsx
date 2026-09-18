@@ -60,10 +60,23 @@ export default function HostelQrScanner() {
     try {
       setError("");
       const response = await api.post("/hostel/scan-leave-qr", { qrData });
-      setMessage(`${response.data.record.studentName}'s approved leave data has been stored.`);
+
+      if (response.data.message?.includes("already scanned")) {
+        setMessage("");
+        setError(
+          `${response.data.record.studentName}'s leave has already been recorded. No duplicate entry was created.`
+        );
+      } else {
+        setError("");
+        setMessage(
+          `${response.data.record.studentName}'s approved leave data has been stored successfully.`
+        );
+      }
+
       setManualQrData("");
       stopCamera();
     } catch (scanError) {
+      setMessage("");
       setError(scanError.response?.data?.message || "Could not store QR leave data.");
     }
   }
