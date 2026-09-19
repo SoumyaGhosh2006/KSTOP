@@ -16,9 +16,8 @@
 
 const express = require("express");
 const multer  = require("multer");
-const path    = require("path");
-const fs      = require("fs");
 const prisma  = require("../../lib/prismaClient");
+const { uploadBuffer, deleteAsset } = require("../../lib/cloudinary");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 
 const router = express.Router();
@@ -49,30 +48,15 @@ function asyncHandler(handler) {
   };
 }
 
-// ── Upload folder setup ───────────────────────────────────────
-// Menu images are stored on disk inside kstop-backend/uploads/mess-menus.
-//
-// IMPORTANT FIX: multer does NOT create this folder by itself.
-// After a fresh `git clone` the folder does not exist, so every
-// upload crashed with "ENOENT: no such file or directory" and the
-// frontend showed "Menu upload failed."
-// mkdirSync with { recursive: true } creates the folder if it is
-// missing and does nothing if it already exists — safe to run
-// every time the server starts.
-const MENU_UPLOAD_DIR = path.join(__dirname, "../../uploads/mess-menus");
-fs.mkdirSync(MENU_UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: MENU_UPLOAD_DIR,
-  filename: (req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-    callback(null, `${Date.now()}-${req.user.id}${extension}`);
-  },
-});
+// ── Mess menu upload setup ──────────────────────────────────
+// Menu images are kept in Cloudinary rather than on the application
+// server. Multer stores the upload in memory only long enough to send it
+// to Cloudinary, so a server restart or redeploy cannot lose the menu.
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max per image
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, callback) => {
     const allowedTypes = ["image/jpeg", "image/png"];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -157,10 +141,8 @@ async function getHostelUser(userId) {
   return user;
 }
 
-// Every hostel action needs to know WHICH hostel it belongs to.
-// 1. If the account is already linked to a hostel, use that.
-// 2. Otherwise create/find a hostel with the same name as the
-//    account and link them (one-time setup, then remembered).
+// Every hostel-staff action needs an explicit assigned hostel.
+// Development quick-login is the only exception and is mapped to its stable demo hostel.
 async function getHostelIdForStaff(userId) {
   const user = await getHostelUser(userId);
 
@@ -200,9 +182,27 @@ async function getHostelIdForStaff(userId) {
   return hostel.id;
 }
 
-// Builds the public URL where an uploaded menu image can be viewed.
-function readImageUrl(req, filename) {
-  return `${req.protocol}://${req.get("host")}/uploads/mess-menus/${filename}`;
+// Resolve the hostel a menu uploader is actually authorized to manage.
+// The frontend never gets to choose this value.
+async function getAuthorizedMessHostelId(req) {
+  if (req.user.role === "hostel") {
+    return getHostelIdForStaff(req.user.id);
+  }
+
+  const student = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { hostelId: true },
+  });
+
+  if (!student) {
+    throw new Error("Student account not found.");
+  }
+
+  if (!student.hostelId) {
+    throw new Error("Your student account is not assigned to a hostel.");
+  }
+
+  return student.hostelId;
 }
 
 // QR codes can contain a JSON string; this turns the raw text into
@@ -313,52 +313,88 @@ router.get("/summary", authorizeRoles("hostel"), asyncHandler(async (req, res) =
 }));
 
 // ── POST /api/hostel/mess-menu ────────────────────────────────
-// Receives one image file (field name "menuImage"), stores it on
-// disk, and saves its URL in the MessMenu table.
+// Students may upload only for their own hostel; hostel staff may
+// upload only for their assigned hostel. The server determines the
+// hostel from the authenticated account.
 router.post(
   "/mess-menu",
-  authorizeRoles("hostel"),
+  authorizeRoles("hostel", "student"),
   upload.single("menuImage"),
   asyncHandler(async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Please upload a JPEG or PNG menu image." });
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a JPEG or PNG menu image.",
+      });
     }
 
-    const hostelId = await getHostelIdForStaff(req.user.id);
-    const menu = await prisma.messMenu.create({
-      data: {
-        hostelId,
-        imageUrl: readImageUrl(req, req.file.filename),
-        uploadedBy: req.user.id,
-      },
-      include: { hostel: { select: { name: true } } },
-    });
+    const hostelId = await getAuthorizedMessHostelId(req);
+    let uploadedAsset;
 
-    res.status(201).json({ success: true, menu });
+    try {
+      uploadedAsset = await uploadBuffer(req.file.buffer, {
+        folder: `kstop/mess-menus/${hostelId}`,
+        resource_type: "image",
+      });
+
+      const previousMenu = await prisma.messMenu.findFirst({
+        where: { hostelId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const menu = await prisma.messMenu.create({
+        data: {
+          hostelId,
+          imageUrl: uploadedAsset.secure_url,
+          publicId: uploadedAsset.public_id,
+          uploadedBy: req.user.id,
+        },
+        include: { hostel: { select: { name: true } } },
+      });
+
+      // The new menu is now the current menu. Remove the previous
+      // database row and Cloudinary asset only after the new state exists.
+      if (previousMenu) {
+        await prisma.messMenu.delete({ where: { id: previousMenu.id } });
+        if (previousMenu.publicId) {
+          try {
+            await deleteAsset(previousMenu.publicId);
+          } catch (cleanupError) {
+            console.error("[hostel] old mess menu cleanup failed:", cleanupError);
+          }
+        }
+      }
+
+      return res.status(201).json({
+        success: true,
+        menu,
+        message: "Mess menu updated successfully.",
+      });
+    } catch (error) {
+      if (uploadedAsset?.public_id) {
+        try {
+          await deleteAsset(uploadedAsset.public_id);
+        } catch (cleanupError) {
+          console.error("[hostel] new mess menu cleanup failed:", cleanupError);
+        }
+      }
+      throw error;
+    }
   })
 );
 
 // ── GET /api/hostel/mess-menus ────────────────────────────────
-// Every logged-in user can view uploaded hostel mess menus.
+// Menus are readable by authenticated users. This endpoint intentionally
+// returns the current menu for each hostel, not historical uploads.
 router.get("/mess-menus", asyncHandler(async (req, res) => {
   const menus = await prisma.messMenu.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
     include: {
-      hostel: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      hostel: { select: { id: true, name: true } },
     },
   });
 
-  res.json({
-    success: true,
-    menus,
-  });
+  res.json({ success: true, menus });
 }));
 
 
