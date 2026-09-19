@@ -330,6 +330,7 @@ router.post(
 
     const hostelId = await getAuthorizedMessHostelId(req);
     let uploadedAsset;
+    let menuCreated = false;
 
     try {
       uploadedAsset = await uploadBuffer(req.file.buffer, {
@@ -351,6 +352,7 @@ router.post(
         },
         include: { hostel: { select: { name: true } } },
       });
+      menuCreated = true;
 
       // The new menu is now the current menu. Remove all older rows and
       // their Cloudinary assets only after the new state exists. This also
@@ -379,7 +381,11 @@ router.post(
         message: "Mess menu updated successfully.",
       });
     } catch (error) {
-      if (uploadedAsset?.public_id) {
+      // If the database row was not created, remove the newly uploaded
+      // asset so a failed request does not leave an orphaned Cloudinary file.
+      // Once the new row exists, keep that asset even if old-menu cleanup
+      // encounters a transient failure.
+      if (!menuCreated && uploadedAsset?.public_id) {
         try {
           await deleteAsset(uploadedAsset.public_id);
         } catch (cleanupError) {
