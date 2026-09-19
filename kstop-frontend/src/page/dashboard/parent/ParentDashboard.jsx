@@ -109,6 +109,12 @@ export default function ParentDashboard() {
             >
               Message Mentor
             </button>
+            <button
+              className="parent-secondary-button"
+              onClick={() => navigate("/dashboard/parent/grievances")}
+            >
+              View Grievances
+            </button>
           </div>
         </section>
       </div>
