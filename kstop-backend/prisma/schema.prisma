@@ -165,6 +165,7 @@ model MessMenu {
   id         String   @id @default(cuid())
   hostelId   String
   imageUrl   String
+  publicId   String?
   uploadedBy String
   createdAt  DateTime @default(now())
 
