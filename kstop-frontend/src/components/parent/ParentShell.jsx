@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { to: "/dashboard/parent", label: "Dashboard", end: true },
   { to: "/dashboard/parent/pending-leaves", label: "Pending Approvals" },
   { to: "/dashboard/parent/leave-history", label: "Leave History" },
+  { to: "/dashboard/parent/grievances", label: "Grievances" },
   { to: "/dashboard/parent/message-mentor", label: "Message Mentor" },
   { to: "/dashboard/parent/notifications", label: "Notifications" },
 ];
