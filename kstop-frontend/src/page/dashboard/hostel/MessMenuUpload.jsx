@@ -60,7 +60,7 @@ export default function MessMenuUpload() {
         headers: { "Content-Type": undefined },
       });
       setUploadedMenu(response.data.menu);
-      setMessage("Menu uploaded successfully. It is now visible to mentors, hostel users, and all students.");
+      setMessage("Menu updated successfully. It is now the current menu for your hostel.");
     } catch (uploadError) {
       setError(uploadError.response?.data?.message || "Menu upload failed.");
     } finally {
@@ -83,7 +83,7 @@ export default function MessMenuUpload() {
               onChange={handleFileChange}
             />
             <p className="hostel-note">
-              Students from any hostel can view this menu. Only students assigned to this hostel can rate it.
+              Students can view this menu. Uploading updates the current menu for your assigned hostel.
             </p>
           </div>
 
