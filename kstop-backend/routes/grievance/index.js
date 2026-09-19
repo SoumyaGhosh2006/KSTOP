@@ -18,6 +18,7 @@ const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
+const { calculateGrievancePriority } = require("../../lib/grievancePriority");
 
 const router = express.Router();
 
@@ -34,23 +35,8 @@ function asyncHandler(handler) {
   };
 }
 
-// ── Simple priority score ──────────────────────────────────
-// The SRS describes a full NLP-based ranker (keyword dictionary,
-// 0–100 score) as a future feature — that file doesn't exist yet.
-// For now we use just the category's base score, already documented
-// in prisma/schema.prisma's GrievanceCategory enum comments. This is
-// intentionally simple: swapping this for real NLP scoring later
-// only means changing this one function, nothing else.
-const CATEGORY_BASE_SCORE = {
-  Water: 70,
-  Electrical: 75,
-  Plumbing: 60,
-  Transport: 50,
-  Internet: 45,
-  Cleaning: 40,
-  Food: 55,
-  Other: 30,
-};
+// Priority is calculated by the isolated NLP-style scorer so the API
+// does not need to know how urgency is derived.
 
 // ── POST /api/grievance/create ──
 // Body: { title, description, category }
@@ -105,7 +91,7 @@ router.post("/create", authorizeRoles("student"), asyncHandler(async (req, res) 
       title: title.trim(),
       description: description.trim(),
       category,
-      priorityScore: CATEGORY_BASE_SCORE[category],
+      priorityScore: calculateGrievancePriority({ title, description, category }),
     },
   });
 
