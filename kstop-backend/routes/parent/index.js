@@ -12,6 +12,7 @@
 //    GET  /api/parent/child-info       → child's name, hostel, mentor
 //    GET  /api/parent/pending-leaves   → leaves with status PENDING_PARENT
 //    GET  /api/parent/leave-history    → all leaves for the child
+    GET  /api/parent/grievances        → grievances for the linked child only
 //    PATCH /api/parent/leave/:id/approve  → parent approves → PENDING_MENTOR
 //    PATCH /api/parent/leave/:id/reject   → parent rejects → REJECTED
 //    POST /api/parent/message-mentor     → send message to child's mentor
@@ -256,6 +257,41 @@ router.patch("/leave/:id/reject", asyncHandler(async (req, res) => {
   }
 
   return res.json({ success: true, leave: updated });
+}));
+
+// ── 6. GET /api/parent/grievances ──
+// A parent can see only grievances belonging to the student linked to
+// this parent account. The parent never supplies a student id to choose.
+router.get("/grievances", asyncHandler(async (req, res) => {
+  const parent = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { childRollNumber: true },
+  });
+
+  if (!parent || !parent.childRollNumber) {
+    return res.status(404).json({ success: false, message: "No child linked." });
+  }
+
+  const child = await prisma.user.findUnique({
+    where: { rollNumber: parent.childRollNumber },
+    select: { id: true },
+  });
+
+  if (!child) {
+    return res.status(404).json({ success: false, message: "Linked student not found." });
+  }
+
+  const grievances = await prisma.grievance.findMany({
+    where: { studentId: child.id },
+    orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }],
+    include: {
+      student: { select: { name: true, rollNumber: true } },
+      hostel: { select: { name: true } },
+      mentor: { select: { name: true } },
+    },
+  });
+
+  return res.json({ success: true, grievances });
 }));
 
 // ── 6. POST /api/parent/message-mentor ──
