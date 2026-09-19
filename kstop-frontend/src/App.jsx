@@ -41,6 +41,7 @@ import ParentPendingLeaves from "./page/dashboard/parent/ParentPendingLeaves";
 import ParentLeaveHistory from "./page/dashboard/parent/ParentLeaveHistory";
 import ParentMessageMentor from "./page/dashboard/parent/ParentMessageMentor";
 import ParentNotifications from "./page/dashboard/parent/ParentNotifications";
+import ParentGrievances from "./page/dashboard/parent/ParentGrievances";
 
 /**
  * Renders the application's public authentication pages and role-protected dashboard routes.
@@ -242,6 +243,14 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="parent">
                 <ParentNotifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/parent/grievances"
+            element={
+              <ProtectedRoute requiredRole="parent">
+                <ParentGrievances />
               </ProtectedRoute>
             }
           />
