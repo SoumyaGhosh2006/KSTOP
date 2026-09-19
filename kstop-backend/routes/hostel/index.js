@@ -337,7 +337,7 @@ router.post(
         resource_type: "image",
       });
 
-      const previousMenu = await prisma.messMenu.findFirst({
+      const previousMenus = await prisma.messMenu.findMany({
         where: { hostelId },
         orderBy: { createdAt: "desc" },
       });
@@ -352,17 +352,25 @@ router.post(
         include: { hostel: { select: { name: true } } },
       });
 
-      // The new menu is now the current menu. Remove the previous
-      // database row and Cloudinary asset only after the new state exists.
-      if (previousMenu) {
-        await prisma.messMenu.delete({ where: { id: previousMenu.id } });
-        if (previousMenu.publicId) {
-          try {
-            await deleteAsset(previousMenu.publicId);
-          } catch (cleanupError) {
-            console.error("[hostel] old mess menu cleanup failed:", cleanupError);
-          }
-        }
+      // The new menu is now the current menu. Remove all older rows and
+      // their Cloudinary assets only after the new state exists. This also
+      // cleans up any historical duplicate rows from the old implementation.
+      if (previousMenus.length) {
+        await prisma.messMenu.deleteMany({
+          where: { id: { in: previousMenus.map((item) => item.id) } },
+        });
+
+        await Promise.all(
+          previousMenus
+            .filter((item) => item.publicId)
+            .map(async (item) => {
+              try {
+                await deleteAsset(item.publicId);
+              } catch (cleanupError) {
+                console.error("[hostel] old mess menu cleanup failed:", cleanupError);
+              }
+            })
+        );
       }
 
       return res.status(201).json({
@@ -387,11 +395,20 @@ router.post(
 // Menus are readable by authenticated users. This endpoint intentionally
 // returns the current menu for each hostel, not historical uploads.
 router.get("/mess-menus", asyncHandler(async (req, res) => {
-  const menus = await prisma.messMenu.findMany({
+  const rows = await prisma.messMenu.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       hostel: { select: { id: true, name: true } },
     },
+  });
+
+  // Return only one current menu per hostel. This keeps the API correct
+  // even if older rows exist from before the replacement logic was added.
+  const seenHostels = new Set();
+  const menus = rows.filter((menu) => {
+    if (seenHostels.has(menu.hostelId)) return false;
+    seenHostels.add(menu.hostelId);
+    return true;
   });
 
   res.json({ success: true, menus });
