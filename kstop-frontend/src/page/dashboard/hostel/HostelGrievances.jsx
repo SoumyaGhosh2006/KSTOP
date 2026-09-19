@@ -92,6 +92,13 @@ export default function HostelGrievances() {
                     <button
                       type="button"
                       className="hostel-button"
+                      onClick={() => updateStatus(grievance.id, "IN_PROGRESS")}
+                    >
+                      In Progress
+                    </button>
+                    <button
+                      type="button"
+                      className="hostel-button"
                       onClick={() => updateStatus(grievance.id, "RESOLVED")}
                     >
                       Resolved
