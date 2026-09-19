@@ -18,7 +18,7 @@ const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
-const { calculateGrievancePriority } = require("../../lib/grievancePriority");
+const { calculateGrievancePriority, CATEGORY_BASE_SCORE } = require("../../lib/grievancePriority");
 
 const router = express.Router();
 
