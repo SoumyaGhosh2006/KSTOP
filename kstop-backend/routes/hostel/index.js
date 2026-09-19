@@ -667,8 +667,8 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
   const hostelId = await getHostelIdForStaff(req.user.id);
   const status = req.body.status;
 
-  if (!["OPEN", "RESOLVED"].includes(status)) {
-    return res.status(400).json({ success: false, message: "Status must be OPEN or RESOLVED." });
+  if (!["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status)) {
+    return res.status(400).json({ success: false, message: "Status must be OPEN, IN_PROGRESS, or RESOLVED." });
   }
 
   const grievance = await prisma.grievance.findFirst({
@@ -688,6 +688,23 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
     include: {
       student: { select: { name: true, rollNumber: true } },
     },
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: grievance.studentId,
+        type: "grievance-updated",
+        message: `Your grievance "${grievance.title}" is now ${status.replace("_", " ")}.`,
+        relatedId: grievance.id,
+      },
+      {
+        userId: grievance.mentorId,
+        type: "grievance-updated",
+        message: `Grievance "${grievance.title}" was updated to ${status.replace("_", " ")}.`,
+        relatedId: grievance.id,
+      },
+    ],
   });
 
   res.json({ success: true, grievance: updatedGrievance });
