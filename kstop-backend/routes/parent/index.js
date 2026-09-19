@@ -294,7 +294,7 @@ router.get("/grievances", asyncHandler(async (req, res) => {
   return res.json({ success: true, grievances });
 }));
 
-// ── 6. POST /api/parent/message-mentor ──
+// ── 7. POST /api/parent/message-mentor ──
 router.post("/message-mentor", asyncHandler(async (req, res) => {
   const { message } = req.body;
   if (!message || message.trim().length === 0) {
@@ -334,7 +334,7 @@ router.post("/message-mentor", asyncHandler(async (req, res) => {
   return res.json({ success: true, message: msg });
 }));
 
-// ── 7. GET /api/parent/messages ──
+// ── 8. GET /api/parent/messages ──
 router.get("/messages", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!parent || !parent.childRollNumber) {
@@ -355,7 +355,7 @@ router.get("/messages", asyncHandler(async (req, res) => {
   return res.json({ success: true, messages });
 }));
 
-// ── 8. GET /api/parent/notifications ──
+// ── 9. GET /api/parent/notifications ──
 router.get("/notifications", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!parent) {
@@ -372,7 +372,7 @@ router.get("/notifications", asyncHandler(async (req, res) => {
   return res.json({ success: true, notifications, unreadCount });
 }));
 
-// ── 9. PATCH /api/parent/notifications/:id/read ──
+// ── 10. PATCH /api/parent/notifications/:id/read ──
 router.patch("/notifications/:id/read", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
 
