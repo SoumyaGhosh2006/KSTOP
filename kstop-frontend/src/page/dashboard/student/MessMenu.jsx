@@ -24,6 +24,8 @@ export default function MessMenu() {
   const [menus, setMenus] = useState([]);
   const [selectedHostelId, setSelectedHostelId] = useState("");
   const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const user = readStoredUser();
 
@@ -45,24 +47,71 @@ export default function MessMenu() {
     ? menus.filter((menu) => menu.hostel.id === selectedHostelId)
     : menus;
 
-  useEffect(() => {
-    async function loadMenus() {
-      try {
-        setError("");
-
-        const response = await api.get("/hostel/mess-menus");
-
-        setMenus(response.data.menus || []);
-      } catch {
-        setError("Could not load hostel menus.");
-      }
+  async function loadMenus() {
+    try {
+      setError("");
+      const response = await api.get("/hostel/mess-menus");
+      setMenus(response.data.menus || []);
+    } catch {
+      setError("Could not load hostel menus.");
     }
+  }
 
+  useEffect(() => {
     loadMenus();
   }, []);
 
+  async function handleUpload(event) {
+    event.preventDefault();
+    setError("");
+
+    if (!file) {
+      setError("Choose a JPEG or PNG menu image before uploading.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("menuImage", file);
+
+    try {
+      setUploading(true);
+      await api.post("/hostel/mess-menu", formData, {
+        headers: { "Content-Type": undefined },
+      });
+      setFile(null);
+      event.currentTarget.reset();
+      await loadMenus();
+    } catch (uploadError) {
+      setError(uploadError.response?.data?.message || "Menu upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <StudentShell title="Mess Menu" backTo="/dashboard/student">
+      <section className="student-surface student-list-card" style={{ marginBottom: "16px" }}>
+        <div className="student-list-subtle" style={{ marginBottom: "10px", fontWeight: 700 }}>
+          Update your hostel's menu
+        </div>
+        <form onSubmit={handleUpload}>
+          <input
+            className="student-input"
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={(event) => setFile(event.target.files?.[0] || null)}
+          />
+          <button
+            type="submit"
+            className="student-primary-button"
+            style={{ marginTop: "10px" }}
+            disabled={uploading}
+          >
+            {uploading ? "Uploading..." : "Upload Menu"}
+          </button>
+        </form>
+      </section>
+
       <div className="student-toolbar">
         <select
           className="student-input student-hostel-select"
