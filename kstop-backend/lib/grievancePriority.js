@@ -58,4 +58,4 @@ function calculateGrievancePriority({ title, description, category }) {
   return Math.min(100, baseScore + keywordScore);
 }
 
-module.exports = { calculateGrievancePriority };
+module.exports = { calculateGrievancePriority, CATEGORY_BASE_SCORE };
