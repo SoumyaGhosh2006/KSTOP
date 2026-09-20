@@ -51,8 +51,57 @@ function sortGrievances(grievances) {
   });
 }
 
+const RECENT_RESOLVED_DAYS = 30;
+
+function getRecentResolvedCutoff() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - RECENT_RESOLVED_DAYS);
+  return cutoff;
+}
+
+function getGrievanceViewWhere(view = "active") {
+  if (view === "recent") {
+    return {
+      staffStatus: "RESOLVED",
+      studentStatus: "CONFIRMED",
+      studentRespondedAt: { gte: getRecentResolvedCutoff() },
+    };
+  }
+
+  if (view === "history") {
+    return {
+      staffStatus: "RESOLVED",
+      studentStatus: "CONFIRMED",
+      OR: [
+        { studentRespondedAt: { lt: getRecentResolvedCutoff() } },
+        { studentRespondedAt: null },
+      ],
+    };
+  }
+
+  // Active view: everything that is not fully resolved.
+  return {
+    OR: [
+      { staffStatus: { not: "RESOLVED" } },
+      { staffStatus: "RESOLVED", studentStatus: "PENDING" },
+      { staffStatus: "RESOLVED", studentStatus: "DISPUTED" },
+    ],
+  };
+}
+
+function getResolutionDate(grievance) {
+  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") {
+    return grievance.studentRespondedAt || grievance.staffResolvedAt || null;
+  }
+
+  return null;
+}
+
 module.exports = {
+  RECENT_RESOLVED_DAYS,
   getGrievanceResolutionStatus,
   withGrievanceResolutionStatus,
   sortGrievances,
+  getGrievanceViewWhere,
+  getResolutionDate,
 };
