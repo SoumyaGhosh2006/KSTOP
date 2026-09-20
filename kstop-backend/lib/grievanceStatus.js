@@ -12,11 +12,12 @@ function getGrievanceResolutionStatus(grievance) {
   const studentResolved = grievance.studentStatus === "CONFIRMED";
   const studentUnresolved = grievance.studentStatus === "DISPUTED";
 
+  // A student's unresolved response is authoritative against a hostel-side
+  // resolved decision. A hostel can report a fix, but the grievance must not
+  // be treated as resolved if the student says it is still unresolved.
+  if (studentUnresolved) return "UNRESOLVED";
   if (staffResolved && studentResolved) return "RESOLVED";
-  if (!staffResolved && studentUnresolved) return "UNRESOLVED";
-  if ((staffResolved && studentUnresolved) || (!staffResolved && studentResolved)) {
-    return "CLASHED";
-  }
+  if (!staffResolved && studentResolved) return "CLASHED";
 
   return "IN_PROGRESS";
 }
