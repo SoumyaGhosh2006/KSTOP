@@ -261,6 +261,7 @@ router.patch("/leave/:id/reject", asyncHandler(async (req, res) => {
 }));
 
 // ── 6. GET /api/parent/grievances ──
+// Query: view=active|recent|history (default: active).
 // A parent can see only grievances belonging to the student linked to
 // this parent account. The parent never supplies a student id to choose.
 router.get("/grievances", asyncHandler(async (req, res) => {
