@@ -19,7 +19,7 @@ const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
 const { calculateGrievancePriority, CATEGORY_BASE_SCORE } = require("../../lib/grievancePriority");
-const { withGrievanceResolutionStatus } = require("../../lib/grievanceStatus");
+const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -132,10 +132,8 @@ router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req,
     orderBy: { createdAt: "desc" },
   });
 
-  return res.json({
-    success: true,
-    grievances: grievances.map(withGrievanceResolutionStatus),
-  });
+  const shaped = grievances.map(withGrievanceResolutionStatus);
+  return res.json({ success: true, grievances: sortGrievances(shaped) });
 }));
 
 // ── PATCH /api/grievance/:id/respond ──
