@@ -8,19 +8,16 @@ import api from "../../../utils/api";
  * @return {{text: string, tone: string}} The status label text and visual tone.
  */
 function getGrievanceLabel(grievance) {
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "DISPUTED") {
-    return { text: "This grievance hasn't been resolved", tone: "alert" };
+  switch (grievance.resolutionStatus) {
+    case "RESOLVED":
+      return { text: "Resolved", tone: "ok" };
+    case "CLASHED":
+      return { text: "Clashed", tone: "alert" };
+    case "UNRESOLVED":
+      return { text: "Unresolved", tone: "alert" };
+    default:
+      return { text: "In progress", tone: "alert" };
   }
-
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") {
-    return { text: "Solved", tone: "ok" };
-  }
-
-  if (grievance.staffStatus === "RESOLVED") {
-    return { text: "Awaiting student confirmation", tone: "alert" };
-  }
-
-  return { text: "Not resolved", tone: "alert" };
 }
 
 /**
@@ -92,13 +89,6 @@ export default function HostelGrievances() {
                     <button
                       type="button"
                       className="hostel-button"
-                      onClick={() => updateStatus(grievance.id, "IN_PROGRESS")}
-                    >
-                      In Progress
-                    </button>
-                    <button
-                      type="button"
-                      className="hostel-button"
                       onClick={() => updateStatus(grievance.id, "RESOLVED")}
                     >
                       Resolved
@@ -108,11 +98,11 @@ export default function HostelGrievances() {
                       className="hostel-button-muted"
                       onClick={() => updateStatus(grievance.id, "OPEN")}
                     >
-                      Not Resolved
+                      Unresolved
                     </button>
                   </div>
-                  {grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "DISPUTED" ? (
-                    <p className="hostel-error">This grievance hasn't been resolved.</p>
+                  {grievance.resolutionStatus === "CLASHED" ? (
+                    <p className="hostel-error">The hostel and student decisions do not match.</p>
                   ) : null}
                 </div>
               ) : null}
