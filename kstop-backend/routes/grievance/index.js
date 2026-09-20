@@ -18,7 +18,7 @@ const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
 const { calculateGrievancePriority, CATEGORY_BASE_SCORE } = require("../../lib/grievancePriority");
-const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -126,13 +126,23 @@ router.post("/create", authorizeRoles("student"), asyncHandler(async (req, res) 
 router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req, res) => {
   await ensureDevStudentAccount(req.user.id);
 
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { studentId: req.user.id },
-    orderBy: { createdAt: "desc" },
+    where: {
+      studentId: req.user.id,
+      ...getGrievanceViewWhere(view),
+    },
   });
 
-  const shaped = grievances.map(withGrievanceResolutionStatus);
-  return res.json({ success: true, grievances: sortGrievances(shaped) });
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  return res.json({ success: true, view, grievances: sortGrievances(shaped) });
 }));
 
 // ── PATCH /api/grievance/:id/respond ──
