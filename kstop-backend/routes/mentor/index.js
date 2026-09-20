@@ -32,6 +32,7 @@ const crypto = require("crypto");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevMentorAccount } = require("../../lib/devAccounts");
+const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -262,20 +263,14 @@ router.get("/mentees", asyncHandler(async (req, res) => {
 router.get("/grievances", asyncHandler(async (req, res) => {
   const grievances = await prisma.grievance.findMany({
     where: { mentorId: req.user.id },
-    orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }],
     include: {
       student: { select: { name: true, rollNumber: true } },
       hostel: { select: { name: true } },
     },
   });
 
-  // Disputed cases float to the top regardless of score — a student
-  // saying "this ISN'T actually fixed" is always the most urgent thing
-  // a mentor should see, more urgent than an unscored new complaint.
-  const disputed = grievances.filter((g) => g.studentStatus === "DISPUTED");
-  const rest = grievances.filter((g) => g.studentStatus !== "DISPUTED");
-
-  return res.json({ success: true, grievances: [...disputed, ...rest] });
+  const shaped = grievances.map(withGrievanceResolutionStatus);
+  return res.json({ success: true, grievances: sortGrievances(shaped) });
 }));
 
 // ── 6. GET /api/mentor/messages ──
