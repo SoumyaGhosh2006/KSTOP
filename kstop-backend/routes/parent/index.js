@@ -12,7 +12,7 @@
 //    GET  /api/parent/child-info       → child's name, hostel, mentor
 //    GET  /api/parent/pending-leaves   → leaves with status PENDING_PARENT
 //    GET  /api/parent/leave-history    → all leaves for the child
-    GET  /api/parent/grievances        → grievances for the linked child only
+//    GET  /api/parent/grievances        → grievances for the linked child only
 //    PATCH /api/parent/leave/:id/approve  → parent approves → PENDING_MENTOR
 //    PATCH /api/parent/leave/:id/reject   → parent rejects → REJECTED
 //    POST /api/parent/message-mentor     → send message to child's mentor
