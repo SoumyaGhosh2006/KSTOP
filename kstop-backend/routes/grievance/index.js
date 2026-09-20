@@ -10,8 +10,7 @@
 //  Routes:
 //    POST  /api/grievance/create              → student files a complaint
 //    GET   /api/grievance/my-grievances        → student's own complaints
-//    PATCH /api/grievance/:id/respond          → student confirms/disputes
-//                                                 a staff-resolved complaint
+//    PATCH /api/grievance/:id/respond          → student records resolved/unresolved decision
 // ─────────────────────────────────────────────
 
 const express = require("express");
