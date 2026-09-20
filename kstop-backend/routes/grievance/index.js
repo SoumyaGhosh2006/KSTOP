@@ -19,6 +19,7 @@ const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
 const { calculateGrievancePriority, CATEGORY_BASE_SCORE } = require("../../lib/grievancePriority");
+const { withGrievanceResolutionStatus } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -131,13 +132,16 @@ router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req,
     orderBy: { createdAt: "desc" },
   });
 
-  return res.json({ success: true, grievances });
+  return res.json({
+    success: true,
+    grievances: grievances.map(withGrievanceResolutionStatus),
+  });
 }));
 
 // ── PATCH /api/grievance/:id/respond ──
 // Body: { response: "CONFIRMED" | "DISPUTED" }
-// Only usable once staff has marked it RESOLVED — that's the whole
-// point of the dual-confirmation system documented in schema.prisma.
+// The student can record either decision at any point. The overall
+// dashboard status is derived from both staff and student decisions.
 router.patch("/:id/respond", authorizeRoles("student"), asyncHandler(async (req, res) => {
   const { response } = req.body;
 
@@ -151,19 +155,15 @@ router.patch("/:id/respond", authorizeRoles("student"), asyncHandler(async (req,
     return res.status(403).json({ success: false, message: "Not authorized for this grievance." });
   }
 
-  if (grievance.staffStatus !== "RESOLVED") {
-    return res.status(400).json({
-      success: false,
-      message: "You can only confirm or dispute a grievance after staff marks it Resolved.",
-    });
-  }
-
   const updated = await prisma.grievance.update({
     where: { id: grievance.id },
     data: { studentStatus: response, studentRespondedAt: new Date() },
   });
 
-  return res.json({ success: true, grievance: updated });
+  return res.json({
+    success: true,
+    grievance: withGrievanceResolutionStatus(updated),
+  });
 }));
 
 module.exports = router;
