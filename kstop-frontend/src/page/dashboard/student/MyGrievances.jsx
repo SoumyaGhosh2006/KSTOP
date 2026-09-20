@@ -7,19 +7,29 @@ import "./student-dashboard.css";
 const CATEGORIES = ["Water", "Electrical", "Plumbing", "Transport", "Internet", "Cleaning", "Food", "Other"];
 
 function statusTone(grievance) {
-  if (grievance.studentStatus === "DISPUTED") return "open";
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") return "resolved";
-  if (grievance.staffStatus === "RESOLVED") return "progress"; // resolved by staff, awaiting student confirmation
-  if (grievance.staffStatus === "IN_PROGRESS") return "progress";
-  return "open";
+  switch (grievance.resolutionStatus) {
+    case "RESOLVED":
+      return "resolved";
+    case "CLASHED":
+      return "open";
+    case "UNRESOLVED":
+      return "open";
+    default:
+      return "progress";
+  }
 }
 
 function statusLabel(grievance) {
-  if (grievance.studentStatus === "DISPUTED") return "Disputed";
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") return "Resolved";
-  if (grievance.staffStatus === "RESOLVED") return "Awaiting your confirmation";
-  if (grievance.staffStatus === "IN_PROGRESS") return "In progress";
-  return "Open";
+  switch (grievance.resolutionStatus) {
+    case "RESOLVED":
+      return "Resolved";
+    case "CLASHED":
+      return "Clashed";
+    case "UNRESOLVED":
+      return "Unresolved";
+    default:
+      return "In progress";
+  }
 }
 
 export default function MyGrievances() {
@@ -135,16 +145,13 @@ export default function MyGrievances() {
             <div>
               <h3>{item.title}</h3>
               <p>{item.category} · {new Date(item.createdAt).toLocaleDateString()}</p>
-              {/* Only shown once staff has resolved it — this is the
-                  dual-confirmation step described in schema.prisma:
-                  staff says fixed, but the STUDENT has final say. */}
-              {item.staffStatus === "RESOLVED" && item.studentStatus === "PENDING" && (
+              {item.resolutionStatus !== "RESOLVED" && (
                 <div className="student-action-row" style={{ marginTop: "8px" }}>
                   <button type="button" className="student-secondary-button" onClick={() => respond(item.id, "CONFIRMED")}>
-                    Confirm it's fixed
+                    Resolved
                   </button>
                   <button type="button" className="student-secondary-button" onClick={() => respond(item.id, "DISPUTED")}>
-                    Not actually fixed
+                    Unresolved
                   </button>
                 </div>
               )}
