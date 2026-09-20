@@ -645,7 +645,8 @@ router.delete("/leave-records", authorizeRoles("hostel"), asyncHandler(async (re
 }));
 
 // ── GET /api/hostel/grievances ────────────────────────────────
-// Complaints for this hostel, most urgent first.
+// Query: view=active|recent|history (default: active).
+// Active excludes fully resolved cases; recent covers the last 30 days.
 router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res) => {
   const hostelId = await getHostelIdForStaff(req.user.id);
   const view = ["active", "recent", "history"].includes(req.query.view)
