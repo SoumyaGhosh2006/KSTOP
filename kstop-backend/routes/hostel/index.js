@@ -19,7 +19,7 @@ const multer  = require("multer");
 const prisma  = require("../../lib/prismaClient");
 const { uploadBuffer, deleteAsset } = require("../../lib/cloudinary");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
-const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -648,8 +648,15 @@ router.delete("/leave-records", authorizeRoles("hostel"), asyncHandler(async (re
 // Complaints for this hostel, most urgent first.
 router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res) => {
   const hostelId = await getHostelIdForStaff(req.user.id);
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { hostelId },
+    where: {
+      hostelId,
+      ...getGrievanceViewWhere(view),
+    },
     include: {
       student: {
         select: {
@@ -661,8 +668,12 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
     },
   });
 
-  const shaped = grievances.map(withGrievanceResolutionStatus);
-  res.json({ success: true, grievances: sortGrievances(shaped) });
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  res.json({ success: true, view, grievances: sortGrievances(shaped) });
 }));
 
 // ── PATCH /api/hostel/grievances/:id/status ───────────────────
