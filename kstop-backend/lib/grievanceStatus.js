@@ -29,15 +29,22 @@ function withGrievanceResolutionStatus(grievance) {
   };
 }
 
-function sortGrievances(grievances) {
-  const statusRank = {
-    CLASHED: 0,
-    UNRESOLVED: 1,
-    IN_PROGRESS: 2,
-    RESOLVED: 3,
-  };
-
+function sortGrievances(grievances, view = "active") {
   return [...grievances].sort((a, b) => {
+    if (view !== "active") {
+      const resolvedDateDifference =
+        new Date(b.resolvedAt || 0) - new Date(a.resolvedAt || 0);
+
+      if (resolvedDateDifference !== 0) return resolvedDateDifference;
+    }
+
+    const statusRank = {
+      CLASHED: 0,
+      UNRESOLVED: 1,
+      IN_PROGRESS: 2,
+      RESOLVED: 3,
+    };
+
     const statusDifference =
       statusRank[a.resolutionStatus] - statusRank[b.resolutionStatus];
 
