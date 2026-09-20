@@ -282,7 +282,7 @@ router.get("/grievances", asyncHandler(async (req, res) => {
     resolvedAt: getResolutionDate(grievance),
   }));
 
-  return res.json({ success: true, view, grievances: sortGrievances(shaped) });
+  return res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── 6. GET /api/mentor/messages ──
