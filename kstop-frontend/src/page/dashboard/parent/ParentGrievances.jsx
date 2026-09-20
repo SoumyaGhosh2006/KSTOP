@@ -64,7 +64,7 @@ export default function ParentGrievances() {
                     {grievance.category} · {formatDate(grievance.createdAt)}
                   </p>
                 </div>
-                <strong>{grievance.staffStatus?.replace("_", " ")}</strong>
+                <strong>{grievance.resolutionStatus?.replace("_", " ") || "In progress"}</strong>
               </div>
 
               <p style={{ marginTop: "14px" }}>{grievance.description}</p>
