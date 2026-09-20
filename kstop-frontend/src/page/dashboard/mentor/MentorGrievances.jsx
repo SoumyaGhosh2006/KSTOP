@@ -5,8 +5,8 @@ import "./mentor-dashboard.css";
 
 const FILTERS = [
   { key: "all", label: "All" },
-  { key: "DISPUTED", label: "Disputed" },
-  { key: "OPEN", label: "Open" },
+  { key: "CLASHED", label: "Clashed" },
+  { key: "UNRESOLVED", label: "Unresolved" },
   { key: "IN_PROGRESS", label: "In Progress" },
   { key: "RESOLVED", label: "Resolved" },
 ];
@@ -41,8 +41,7 @@ export default function MentorGrievances() {
 
   const filtered = useMemo(() => {
     if (filter === "all") return grievances;
-    if (filter === "DISPUTED") return grievances.filter((g) => g.studentStatus === "DISPUTED");
-    return grievances.filter((g) => g.staffStatus === filter);
+    return grievances.filter((g) => g.resolutionStatus === filter);
   }, [grievances, filter]);
 
   if (loading) {
@@ -61,7 +60,7 @@ export default function MentorGrievances() {
       <MentorShell title="Grievances" backTo="/dashboard/mentor">
         <div className="mentor-surface mentor-empty-state">
           <h3>No grievances yet</h3>
-          <p>Complaints raised by your mentees will show up here, disputed ones first.</p>
+          <p>Complaints raised by your mentees will show up here, with active and clashed cases first.</p>
         </div>
       </MentorShell>
     );
@@ -100,11 +99,8 @@ export default function MentorGrievances() {
                     </p>
                   </div>
                   <div className="mentor-expandable-card__badges">
-                    {g.studentStatus === "DISPUTED" ? (
-                      <span className="mentor-status-pill is-disputed">Disputed</span>
-                    ) : null}
-                    <span className={`mentor-status-pill is-${g.staffStatus?.toLowerCase()}`}>
-                      {g.staffStatus?.replace("_", " ")}
+                    <span className={`mentor-status-pill is-${g.resolutionStatus?.toLowerCase()}`}>
+                      {g.resolutionStatus?.replace("_", " ")}
                     </span>
                     <span className="mentor-status-pill is-progress">{g.category}</span>
                   </div>
@@ -121,7 +117,7 @@ export default function MentorGrievances() {
                   </div>
                   <div className="mentor-detail-row">
                     <span className="label">Student's Response</span>
-                    <span className="value">{g.studentStatus?.replace("_", " ") || "Pending"}</span>
+                    <span className="value">{g.resolutionStatus?.replace("_", " ") || "In progress"}</span>
                   </div>
                 </div>
               </article>
