@@ -19,6 +19,7 @@ const multer  = require("multer");
 const prisma  = require("../../lib/prismaClient");
 const { uploadBuffer, deleteAsset } = require("../../lib/cloudinary");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
+const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -649,10 +650,6 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
   const hostelId = await getHostelIdForStaff(req.user.id);
   const grievances = await prisma.grievance.findMany({
     where: { hostelId },
-    orderBy: [
-      { priorityScore: "desc" },
-      { createdAt: "desc" },
-    ],
     include: {
       student: {
         select: {
@@ -664,7 +661,8 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
     },
   });
 
-  res.json({ success: true, grievances });
+  const shaped = grievances.map(withGrievanceResolutionStatus);
+  res.json({ success: true, grievances: sortGrievances(shaped) });
 }));
 
 // ── PATCH /api/hostel/grievances/:id/status ───────────────────
@@ -673,8 +671,11 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
   const hostelId = await getHostelIdForStaff(req.user.id);
   const status = req.body.status;
 
-  if (!["OPEN", "IN_PROGRESS", "RESOLVED"].includes(status)) {
-    return res.status(400).json({ success: false, message: "Status must be OPEN, IN_PROGRESS, or RESOLVED." });
+  if (!["OPEN", "RESOLVED"].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Status must be RESOLVED or OPEN (unresolved).",
+    });
   }
 
   const grievance = await prisma.grievance.findFirst({
@@ -713,7 +714,10 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
     ],
   });
 
-  res.json({ success: true, grievance: updatedGrievance });
+  res.json({
+    success: true,
+    grievance: withGrievanceResolutionStatus(updatedGrievance),
+  });
 }));
 
 module.exports = router;
