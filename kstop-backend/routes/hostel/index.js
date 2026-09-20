@@ -674,7 +674,7 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
     resolvedAt: getResolutionDate(grievance),
   }));
 
-  res.json({ success: true, view, grievances: sortGrievances(shaped) });
+  res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── PATCH /api/hostel/grievances/:id/status ───────────────────
