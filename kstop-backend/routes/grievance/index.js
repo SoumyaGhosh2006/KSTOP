@@ -123,6 +123,7 @@ router.post("/create", authorizeRoles("student"), asyncHandler(async (req, res) 
 }));
 
 // ── GET /api/grievance/my-grievances ──
+// Query: view=active|recent|history (default: active).
 router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req, res) => {
   await ensureDevStudentAccount(req.user.id);
 
