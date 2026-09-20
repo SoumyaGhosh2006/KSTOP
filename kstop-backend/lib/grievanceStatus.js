@@ -1,0 +1,57 @@
+// Central grievance resolution rules.
+//
+// The database keeps the two independent decisions:
+// - staffStatus: OPEN / RESOLVED
+// - studentStatus: PENDING / CONFIRMED / DISPUTED
+//
+// The dashboard status is derived from those two decisions so we do not
+// introduce another database field that can drift out of sync.
+
+function getGrievanceResolutionStatus(grievance) {
+  const staffResolved = grievance.staffStatus === "RESOLVED";
+  const studentResolved = grievance.studentStatus === "CONFIRMED";
+  const studentUnresolved = grievance.studentStatus === "DISPUTED";
+
+  if (staffResolved && studentResolved) return "RESOLVED";
+  if (!staffResolved && studentUnresolved) return "UNRESOLVED";
+  if ((staffResolved && studentUnresolved) || (!staffResolved && studentResolved)) {
+    return "CLASHED";
+  }
+
+  return "IN_PROGRESS";
+}
+
+function withGrievanceResolutionStatus(grievance) {
+  return {
+    ...grievance,
+    resolutionStatus: getGrievanceResolutionStatus(grievance),
+  };
+}
+
+function sortGrievances(grievances) {
+  const statusRank = {
+    CLASHED: 0,
+    UNRESOLVED: 1,
+    IN_PROGRESS: 2,
+    RESOLVED: 3,
+  };
+
+  return [...grievances].sort((a, b) => {
+    const statusDifference =
+      statusRank[a.resolutionStatus] - statusRank[b.resolutionStatus];
+
+    if (statusDifference !== 0) return statusDifference;
+
+    if (b.priorityScore !== a.priorityScore) {
+      return b.priorityScore - a.priorityScore;
+    }
+
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+}
+
+module.exports = {
+  getGrievanceResolutionStatus,
+  withGrievanceResolutionStatus,
+  sortGrievances,
+};
