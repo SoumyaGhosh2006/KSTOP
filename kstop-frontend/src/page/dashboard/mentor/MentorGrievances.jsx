@@ -46,17 +46,6 @@ export default function MentorGrievances() {
     );
   }
 
-  if (grievances.length === 0) {
-    return (
-      <MentorShell title="Grievances" backTo="/dashboard/mentor">
-        <div className="mentor-surface mentor-empty-state">
-          <h3>No grievances yet</h3>
-          <p>Complaints raised by your mentees will show up here, with active and clashed cases first.</p>
-        </div>
-      </MentorShell>
-    );
-  }
-
   return (
     <MentorShell title="Grievances" backTo="/dashboard/mentor">
       <div className="mentor-dashboard-stack">
