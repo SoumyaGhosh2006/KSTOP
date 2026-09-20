@@ -159,6 +159,7 @@ model Grievance {
   @@index([hostelId])
   @@index([studentId])
   @@index([priorityScore])
+  @@index([studentRespondedAt])
 }
 
 model MessMenu {
