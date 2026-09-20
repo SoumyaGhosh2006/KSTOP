@@ -257,6 +257,7 @@ router.get("/mentees", asyncHandler(async (req, res) => {
 }));
 
 // ── 5. GET /api/mentor/grievances ──
+// Query: view=active|recent|history (default: active).
 // Only grievances raised by THIS mentor's own mentees — never every
 // student's. Disputed ones always show first (student disagrees
 // staff actually fixed it), then sorted by priorityScore.
