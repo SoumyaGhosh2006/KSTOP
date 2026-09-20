@@ -25,6 +25,7 @@ const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevParentAccount } = require("../../lib/devAccounts");
+const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -283,7 +284,6 @@ router.get("/grievances", asyncHandler(async (req, res) => {
 
   const grievances = await prisma.grievance.findMany({
     where: { studentId: child.id },
-    orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }],
     include: {
       student: { select: { name: true, rollNumber: true } },
       hostel: { select: { name: true } },
@@ -291,7 +291,8 @@ router.get("/grievances", asyncHandler(async (req, res) => {
     },
   });
 
-  return res.json({ success: true, grievances });
+  const shaped = grievances.map(withGrievanceResolutionStatus);
+  return res.json({ success: true, grievances: sortGrievances(shaped) });
 }));
 
 // ── 7. POST /api/parent/message-mentor ──
