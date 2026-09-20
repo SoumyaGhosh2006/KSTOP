@@ -11,7 +11,7 @@
 //    POST   /api/hostel/scan-leave-qr        → store leave data from a QR code
 //    DELETE /api/hostel/leave-records        → delete selected leave rows
 //    GET    /api/hostel/grievances           → list complaints for this hostel
-//    PATCH  /api/hostel/grievances/:id/status→ mark a complaint open/resolved
+//    PATCH  /api/hostel/grievances/:id/status→ record hostel resolved/unresolved decision
 // ─────────────────────────────────────────────
 
 const express = require("express");
@@ -666,7 +666,7 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
 }));
 
 // ── PATCH /api/hostel/grievances/:id/status ───────────────────
-// Staff marks a complaint OPEN or RESOLVED.
+// Staff records the hostel-side decision: RESOLVED or OPEN (unresolved).
 router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(async (req, res) => {
   const hostelId = await getHostelIdForStaff(req.user.id);
   const status = req.body.status;
