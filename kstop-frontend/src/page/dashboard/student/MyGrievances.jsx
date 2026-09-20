@@ -34,6 +34,7 @@ function statusLabel(grievance) {
 
 export default function MyGrievances() {
   const [grievances, setGrievances] = useState([]);
+  const [view, setView] = useState("active");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", category: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +43,7 @@ export default function MyGrievances() {
 
   async function loadGrievances() {
     try {
-      const res = await api.get("/grievance/my-grievances");
+      const res = await api.get("/grievance/my-grievances", { params: { view } });
       setGrievances(res.data.grievances);
     } catch (err) {
       setError(err.response?.data?.message || "Could not load your grievances.");
@@ -51,7 +52,7 @@ export default function MyGrievances() {
 
   useEffect(() => {
     loadGrievances();
-  }, []);
+  }, [view]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -137,7 +138,26 @@ export default function MyGrievances() {
         </form>
       )}
 
-      <div className="student-subsection-label">MY GRIEVANCES</div>
+      <div className="student-filter-row" style={{ marginBottom: "14px" }}>
+        {[
+          ["active", "Active"],
+          ["recent", "Recently Resolved"],
+          ["history", "History"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`student-filter-pill${view === key ? " is-active" : ""}`}
+            onClick={() => setView(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="student-subsection-label">
+        {view === "active" ? "ACTIVE GRIEVANCES" : view === "recent" ? "RECENTLY RESOLVED" : "GRIEVANCE HISTORY"}
+      </div>
 
       <section className="student-grievance-list">
         {grievances.map((item) => (
@@ -145,7 +165,7 @@ export default function MyGrievances() {
             <div>
               <h3>{item.title}</h3>
               <p>{item.category} · {new Date(item.createdAt).toLocaleDateString()}</p>
-              {item.resolutionStatus !== "RESOLVED" && (
+              {view === "active" && item.resolutionStatus !== "RESOLVED" && (
                 <div className="student-action-row" style={{ marginTop: "8px" }}>
                   <button type="button" className="student-secondary-button" onClick={() => respond(item.id, "CONFIRMED")}>
                     Resolved
@@ -155,6 +175,11 @@ export default function MyGrievances() {
                   </button>
                 </div>
               )}
+              {view !== "active" && item.resolvedAt ? (
+                <p className="student-note" style={{ marginTop: "8px" }}>
+                  Resolved on {new Date(item.resolvedAt).toLocaleDateString("en-IN")}
+                </p>
+              ) : null}
             </div>
             <span className={`student-status-pill is-${statusTone(item)}`}>{statusLabel(item)}</span>
           </article>
