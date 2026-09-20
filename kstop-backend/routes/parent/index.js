@@ -25,7 +25,7 @@ const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevParentAccount } = require("../../lib/devAccounts");
-const { withGrievanceResolutionStatus, sortGrievances } = require("../../lib/grievanceStatus");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -282,8 +282,15 @@ router.get("/grievances", asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: "Linked student not found." });
   }
 
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { studentId: child.id },
+    where: {
+      studentId: child.id,
+      ...getGrievanceViewWhere(view),
+    },
     include: {
       student: { select: { name: true, rollNumber: true } },
       hostel: { select: { name: true } },
@@ -291,8 +298,12 @@ router.get("/grievances", asyncHandler(async (req, res) => {
     },
   });
 
-  const shaped = grievances.map(withGrievanceResolutionStatus);
-  return res.json({ success: true, grievances: sortGrievances(shaped) });
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  return res.json({ success: true, view, grievances: sortGrievances(shaped) });
 }));
 
 // ── 7. POST /api/parent/message-mentor ──
