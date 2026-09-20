@@ -25,12 +25,13 @@ function getGrievanceLabel(grievance) {
  */
 export default function HostelGrievances() {
   const [grievances, setGrievances] = useState([]);
+  const [view, setView] = useState("active");
   const [openId, setOpenId] = useState(null);
   const [error, setError] = useState("");
 
   async function loadGrievances() {
     try {
-      const response = await api.get("/hostel/grievances");
+      const response = await api.get("/hostel/grievances", { params: { view } });
       setGrievances(response.data.grievances);
     } catch {
       setError("Could not load hostel grievances.");
@@ -39,7 +40,8 @@ export default function HostelGrievances() {
 
   useEffect(() => {
     loadGrievances();
-  }, []);
+    setOpenId(null);
+  }, [view]);
 
   async function updateStatus(grievanceId, status) {
     try {
@@ -54,6 +56,23 @@ export default function HostelGrievances() {
   return (
     <HostelShell title="Student Grievances" eyebrow="Residents of this hostel">
       {error ? <p className="hostel-error">{error}</p> : null}
+
+      <div className="hostel-filter-row">
+        {[
+          ["active", "Active"],
+          ["recent", "Recently Resolved"],
+          ["history", "History"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`hostel-filter-pill${view === key ? " is-active" : ""}`}
+            onClick={() => setView(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <section className="hostel-grievance-list">
         {grievances.map((grievance) => {
@@ -75,15 +94,17 @@ export default function HostelGrievances() {
                 {grievance.student?.rollNumber || "Not provided"}
               </p>
 
-              <button
-                type="button"
-                className="hostel-button-muted"
-                onClick={() => setOpenId(isOpen ? null : grievance.id)}
-              >
-                {isOpen ? "Hide Options" : "Update Status"}
-              </button>
+              {view === "active" ? (
+                <button
+                  type="button"
+                  className="hostel-button-muted"
+                  onClick={() => setOpenId(isOpen ? null : grievance.id)}
+                >
+                  {isOpen ? "Hide Options" : "Update Status"}
+                </button>
+              ) : null}
 
-              {isOpen ? (
+              {view === "active" && isOpen ? (
                 <div className="hostel-dropdown">
                   <div className="hostel-actions">
                     <button
