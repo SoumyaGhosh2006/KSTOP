@@ -143,7 +143,7 @@ router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req,
     resolvedAt: getResolutionDate(grievance),
   }));
 
-  return res.json({ success: true, view, grievances: sortGrievances(shaped) });
+  return res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── PATCH /api/grievance/:id/respond ──
