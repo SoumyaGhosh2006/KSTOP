@@ -8,17 +8,27 @@
 // introduce another database field that can drift out of sync.
 
 function getGrievanceResolutionStatus(grievance) {
-  const staffResolved = grievance.staffStatus === "RESOLVED";
+  const hostelResponded = Boolean(grievance.staffRespondedAt);
+  const studentResponded = Boolean(grievance.studentRespondedAt);
+  const hostelResolved = grievance.staffStatus === "RESOLVED";
   const studentResolved = grievance.studentStatus === "CONFIRMED";
   const studentUnresolved = grievance.studentStatus === "DISPUTED";
 
-  // A student's unresolved response is authoritative against a hostel-side
-  // resolved decision. A hostel can report a fix, but the grievance must not
-  // be treated as resolved if the student says it is still unresolved.
+  // The overall status is derived from the two recorded decisions:
+  // - both resolved -> RESOLVED
+  // - hostel resolved + student unresolved -> CLASHED
+  // - student unresolved -> UNRESOLVED
+  // - neither side has responded -> IN_PROGRESS
+  // A hostel "OPEN" response is explicitly distinguishable from no response
+  // by staffRespondedAt.
+  if (hostelResolved && studentResolved) return "RESOLVED";
+  if (hostelResolved && studentUnresolved) return "CLASHED";
   if (studentUnresolved) return "UNRESOLVED";
-  if (staffResolved && studentResolved) return "RESOLVED";
-  if (!staffResolved && studentResolved) return "CLASHED";
+  if (!hostelResponded && !studentResponded) return "IN_PROGRESS";
+  if (hostelResponded && !hostelResolved) return "UNRESOLVED";
 
+  // One side has responded with "resolved", while the other has not
+  // responded yet.
   return "IN_PROGRESS";
 }
 
