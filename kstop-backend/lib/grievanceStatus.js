@@ -9,26 +9,28 @@
 
 function getGrievanceResolutionStatus(grievance) {
   const hostelResponded = Boolean(grievance.staffRespondedAt);
-  const studentResponded = Boolean(grievance.studentRespondedAt);
   const hostelResolved = grievance.staffStatus === "RESOLVED";
+  const studentResponded = Boolean(grievance.studentRespondedAt);
   const studentResolved = grievance.studentStatus === "CONFIRMED";
   const studentUnresolved = grievance.studentStatus === "DISPUTED";
 
-  // The overall status is derived from the two recorded decisions:
-  // - both resolved -> RESOLVED
-  // - hostel resolved + student unresolved -> CLASHED
-  // - student unresolved -> UNRESOLVED
-  // - neither side has responded -> IN_PROGRESS
-  // A hostel "OPEN" response is explicitly distinguishable from no response
-  // by staffRespondedAt.
-  if (hostelResolved && studentResolved) return "RESOLVED";
-  if (hostelResolved && studentUnresolved) return "CLASHED";
-  if (studentUnresolved) return "UNRESOLVED";
-  if (!hostelResponded && !studentResponded) return "IN_PROGRESS";
-  if (hostelResponded && !hostelResolved) return "UNRESOLVED";
+  // Student confirmation is sufficient to close the grievance. Hostel staff
+  // may leave the hostel-side response untouched or explicitly unresolved.
+  if (studentResolved) return "RESOLVED";
 
-  // One side has responded with "resolved", while the other has not
-  // responded yet.
+  // A hostel-side resolved decision conflicts with a student's unresolved
+  // decision, so this remains active and is shown as a clash.
+  if (hostelResolved && studentUnresolved) return "CLASHED";
+
+  // The student has flagged the grievance as unresolved while the hostel
+  // has not responded yet.
+  if (!hostelResponded && studentUnresolved) return "UNRESOLVED";
+
+  // Neither side has responded.
+  if (!hostelResponded && !studentResponded) return "IN_PROGRESS";
+
+  // If the student has not confirmed resolution, the grievance remains
+  // active. This also covers an explicit hostel-unresolved response.
   return "IN_PROGRESS";
 }
 
@@ -79,7 +81,6 @@ function getRecentResolvedCutoff() {
 function getGrievanceViewWhere(view = "active") {
   if (view === "recent") {
     return {
-      staffStatus: "RESOLVED",
       studentStatus: "CONFIRMED",
       studentRespondedAt: { gte: getRecentResolvedCutoff() },
     };
@@ -90,7 +91,6 @@ function getGrievanceViewWhere(view = "active") {
     // simply the convenient 30-day subset; keeping History inclusive makes
     // the tab useful regardless of when a grievance was closed.
     return {
-      staffStatus: "RESOLVED",
       studentStatus: "CONFIRMED",
     };
   }
@@ -106,7 +106,7 @@ function getGrievanceViewWhere(view = "active") {
 }
 
 function getResolutionDate(grievance) {
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") {
+  if (grievance.studentStatus === "CONFIRMED") {
     return grievance.studentRespondedAt || grievance.staffResolvedAt || null;
   }
 
