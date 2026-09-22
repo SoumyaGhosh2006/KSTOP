@@ -320,6 +320,48 @@
   margin-bottom: 12px;
 }
 
+
+.hostel-grievance-responses {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.hostel-response-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e8e0d4;
+  border-radius: 9px;
+  background: #faf8f2;
+  font-size: 12px;
+}
+
+.hostel-response-row span {
+  color: #70675e;
+}
+
+.hostel-response-row strong {
+  color: #24211d;
+}
+
+.hostel-response-row small {
+  color: #9a9288;
+}
+
+.hostel-button.is-selected {
+  box-shadow: inset 0 0 0 2px rgba(255, 250, 240, 0.45);
+}
+
+.hostel-button-muted.is-selected {
+  border-color: #d95d39;
+  background: #fff1ec;
+  color: #b94336;
+  font-weight: 700;
+}
+
 .hostel-dropdown {
   border-top: 1px solid #e8e0d4;
   margin-top: 12px;
