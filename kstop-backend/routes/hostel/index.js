@@ -702,6 +702,7 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
     where: { id: grievance.id },
     data: {
       staffStatus: status,
+      staffRespondedAt: new Date(),
       staffResolvedAt: status === "RESOLVED" ? new Date() : null,
     },
     include: {
