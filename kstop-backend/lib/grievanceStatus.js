@@ -76,13 +76,12 @@ function getGrievanceViewWhere(view = "active") {
   }
 
   if (view === "history") {
+    // History is the complete resolved register. "Recently Resolved" is
+    // simply the convenient 30-day subset; keeping History inclusive makes
+    // the tab useful regardless of when a grievance was closed.
     return {
       staffStatus: "RESOLVED",
       studentStatus: "CONFIRMED",
-      OR: [
-        { studentRespondedAt: { lt: getRecentResolvedCutoff() } },
-        { studentRespondedAt: null },
-      ],
     };
   }
 
