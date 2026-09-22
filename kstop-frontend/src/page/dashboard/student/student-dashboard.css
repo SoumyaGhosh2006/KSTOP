@@ -581,6 +581,52 @@
   white-space: nowrap;
 }
 
+
+.student-grievance-responses {
+  margin-top: 12px;
+  display: grid;
+  gap: 7px;
+  max-width: 560px;
+}
+
+.student-response-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e8e0d4;
+  border-radius: 9px;
+  background: #faf8f2;
+  font-size: 12px;
+}
+
+.student-response-row span {
+  color: #70675e;
+}
+
+.student-response-row strong {
+  color: #252422;
+  font-size: 12px;
+}
+
+.student-response-row small {
+  color: #9a9288;
+}
+
+.student-secondary-button.is-selected {
+  border-color: #2d8b53;
+  background: #eef8f1;
+  color: #2d8b53;
+  font-weight: 700;
+}
+
+.student-secondary-button.is-selected.is-unresolved {
+  border-color: #d34c3f;
+  background: #fff1ef;
+  color: #d34c3f;
+}
+
 .student-status-pill.is-approved,
 .student-status-pill.is-resolved {
   color: #2d8b53;
