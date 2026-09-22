@@ -32,6 +32,7 @@ const crypto = require("crypto");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevMentorAccount } = require("../../lib/devAccounts");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -256,26 +257,32 @@ router.get("/mentees", asyncHandler(async (req, res) => {
 }));
 
 // ── 5. GET /api/mentor/grievances ──
+// Query: view=active|recent|history (default: active).
 // Only grievances raised by THIS mentor's own mentees — never every
 // student's. Disputed ones always show first (student disagrees
 // staff actually fixed it), then sorted by priorityScore.
 router.get("/grievances", asyncHandler(async (req, res) => {
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { mentorId: req.user.id },
-    orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }],
+    where: {
+      mentorId: req.user.id,
+      ...getGrievanceViewWhere(view),
+    },
     include: {
       student: { select: { name: true, rollNumber: true } },
       hostel: { select: { name: true } },
     },
   });
 
-  // Disputed cases float to the top regardless of score — a student
-  // saying "this ISN'T actually fixed" is always the most urgent thing
-  // a mentor should see, more urgent than an unscored new complaint.
-  const disputed = grievances.filter((g) => g.studentStatus === "DISPUTED");
-  const rest = grievances.filter((g) => g.studentStatus !== "DISPUTED");
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
 
-  return res.json({ success: true, grievances: [...disputed, ...rest] });
+  return res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── 6. GET /api/mentor/messages ──

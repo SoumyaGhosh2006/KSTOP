@@ -7,23 +7,44 @@ import "./student-dashboard.css";
 const CATEGORIES = ["Water", "Electrical", "Plumbing", "Transport", "Internet", "Cleaning", "Food", "Other"];
 
 function statusTone(grievance) {
-  if (grievance.studentStatus === "DISPUTED") return "open";
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") return "resolved";
-  if (grievance.staffStatus === "RESOLVED") return "progress"; // resolved by staff, awaiting student confirmation
-  if (grievance.staffStatus === "IN_PROGRESS") return "progress";
-  return "open";
+  switch (grievance.resolutionStatus) {
+    case "RESOLVED":
+      return "resolved";
+    case "CLASHED":
+      return "open";
+    case "UNRESOLVED":
+      return "open";
+    default:
+      return "progress";
+  }
 }
 
 function statusLabel(grievance) {
-  if (grievance.studentStatus === "DISPUTED") return "Disputed";
-  if (grievance.staffStatus === "RESOLVED" && grievance.studentStatus === "CONFIRMED") return "Resolved";
-  if (grievance.staffStatus === "RESOLVED") return "Awaiting your confirmation";
-  if (grievance.staffStatus === "IN_PROGRESS") return "In progress";
-  return "Open";
+  switch (grievance.resolutionStatus) {
+    case "RESOLVED":
+      return "Resolved";
+    case "CLASHED":
+      return "Clashed";
+    case "UNRESOLVED":
+      return "Unresolved";
+    default:
+      return "In progress";
+  }
+}
+
+function hostelResponseLabel(grievance) {
+  if (!grievance.staffRespondedAt) return "Pending";
+  return grievance.staffStatus === "RESOLVED" ? "Resolved" : "Unresolved";
+}
+
+function studentResponseLabel(grievance) {
+  if (!grievance.studentRespondedAt) return "Pending";
+  return grievance.studentStatus === "CONFIRMED" ? "Resolved" : "Unresolved";
 }
 
 export default function MyGrievances() {
   const [grievances, setGrievances] = useState([]);
+  const [view, setView] = useState("active");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", category: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -32,7 +53,7 @@ export default function MyGrievances() {
 
   async function loadGrievances() {
     try {
-      const res = await api.get("/grievance/my-grievances");
+      const res = await api.get("/grievance/my-grievances", { params: { view } });
       setGrievances(res.data.grievances);
     } catch (err) {
       setError(err.response?.data?.message || "Could not load your grievances.");
@@ -41,7 +62,7 @@ export default function MyGrievances() {
 
   useEffect(() => {
     loadGrievances();
-  }, []);
+  }, [view]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -71,7 +92,8 @@ export default function MyGrievances() {
     setError("");
     try {
       await api.patch(`/grievance/${id}/respond`, { response });
-      loadGrievances();
+      setMessage("Your response was recorded on this grievance.");
+      await loadGrievances();
     } catch (err) {
       setError(err.response?.data?.message || "Could not send your response.");
     }
@@ -127,7 +149,26 @@ export default function MyGrievances() {
         </form>
       )}
 
-      <div className="student-subsection-label">MY GRIEVANCES</div>
+      <div className="student-filter-row" style={{ marginBottom: "14px" }}>
+        {[
+          ["active", "Active"],
+          ["recent", "Recently Resolved"],
+          ["history", "History"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`student-filter-pill${view === key ? " is-active" : ""}`}
+            onClick={() => setView(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="student-subsection-label">
+        {view === "active" ? "ACTIVE GRIEVANCES" : view === "recent" ? "RECENTLY RESOLVED" : "GRIEVANCE HISTORY"}
+      </div>
 
       <section className="student-grievance-list">
         {grievances.map((item) => (
@@ -135,19 +176,45 @@ export default function MyGrievances() {
             <div>
               <h3>{item.title}</h3>
               <p>{item.category} · {new Date(item.createdAt).toLocaleDateString()}</p>
-              {/* Only shown once staff has resolved it — this is the
-                  dual-confirmation step described in schema.prisma:
-                  staff says fixed, but the STUDENT has final say. */}
-              {item.staffStatus === "RESOLVED" && item.studentStatus === "PENDING" && (
+              <div className="student-grievance-responses">
+                <div className="student-response-row">
+                  <span>Hostel response</span>
+                  <strong>{hostelResponseLabel(item)}</strong>
+                  {item.staffRespondedAt ? (
+                    <small>{new Date(item.staffRespondedAt).toLocaleDateString("en-IN")}</small>
+                  ) : null}
+                </div>
+                <div className="student-response-row">
+                  <span>Your response</span>
+                  <strong>{studentResponseLabel(item)}</strong>
+                  {item.studentRespondedAt ? (
+                    <small>{new Date(item.studentRespondedAt).toLocaleDateString("en-IN")}</small>
+                  ) : null}
+                </div>
+              </div>
+              {view === "active" && item.resolutionStatus !== "RESOLVED" && (
                 <div className="student-action-row" style={{ marginTop: "8px" }}>
-                  <button type="button" className="student-secondary-button" onClick={() => respond(item.id, "CONFIRMED")}>
-                    Confirm it's fixed
+                  <button
+                    type="button"
+                    className={"student-secondary-button" + (item.studentStatus === "CONFIRMED" ? " is-selected" : "")}
+                    onClick={() => respond(item.id, "CONFIRMED")}
+                  >
+                    {item.studentStatus === "CONFIRMED" ? "✓ Resolved" : "Mark resolved"}
                   </button>
-                  <button type="button" className="student-secondary-button" onClick={() => respond(item.id, "DISPUTED")}>
-                    Not actually fixed
+                  <button
+                    type="button"
+                    className={"student-secondary-button" + (item.studentStatus === "DISPUTED" ? " is-selected is-unresolved" : "")}
+                    onClick={() => respond(item.id, "DISPUTED")}
+                  >
+                    {item.studentStatus === "DISPUTED" ? "✓ Unresolved" : "Mark unresolved"}
                   </button>
                 </div>
               )}
+              {view !== "active" && item.resolvedAt ? (
+                <p className="student-note" style={{ marginTop: "8px" }}>
+                  Resolved on {new Date(item.resolvedAt).toLocaleDateString("en-IN")}
+                </p>
+              ) : null}
             </div>
             <span className={`student-status-pill is-${statusTone(item)}`}>{statusLabel(item)}</span>
           </article>
@@ -155,7 +222,13 @@ export default function MyGrievances() {
 
         {!grievances.length ? (
           <section className="student-surface student-list-card">
-            <p className="student-note">You haven't filed any grievances yet.</p>
+            <p className="student-note">
+              {view === "active"
+                ? "No active grievances. New grievances stay here until the hostel and student have both responded."
+                : view === "recent"
+                  ? "No grievances were fully resolved in the last 30 days."
+                  : "No resolved grievances are in your history yet. Resolved grievances are kept here permanently."}
+            </p>
           </section>
         ) : null}
       </section>

@@ -12,6 +12,7 @@
 //    GET  /api/parent/child-info       → child's name, hostel, mentor
 //    GET  /api/parent/pending-leaves   → leaves with status PENDING_PARENT
 //    GET  /api/parent/leave-history    → all leaves for the child
+//    GET  /api/parent/grievances        → grievances for the linked child only
 //    PATCH /api/parent/leave/:id/approve  → parent approves → PENDING_MENTOR
 //    PATCH /api/parent/leave/:id/reject   → parent rejects → REJECTED
 //    POST /api/parent/message-mentor     → send message to child's mentor
@@ -24,6 +25,7 @@ const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevParentAccount } = require("../../lib/devAccounts");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -258,7 +260,54 @@ router.patch("/leave/:id/reject", asyncHandler(async (req, res) => {
   return res.json({ success: true, leave: updated });
 }));
 
-// ── 6. POST /api/parent/message-mentor ──
+// ── 6. GET /api/parent/grievances ──
+// Query: view=active|recent|history (default: active).
+// A parent can see only grievances belonging to the student linked to
+// this parent account. The parent never supplies a student id to choose.
+router.get("/grievances", asyncHandler(async (req, res) => {
+  const parent = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { childRollNumber: true },
+  });
+
+  if (!parent || !parent.childRollNumber) {
+    return res.status(404).json({ success: false, message: "No child linked." });
+  }
+
+  const child = await prisma.user.findUnique({
+    where: { rollNumber: parent.childRollNumber },
+    select: { id: true },
+  });
+
+  if (!child) {
+    return res.status(404).json({ success: false, message: "Linked student not found." });
+  }
+
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
+  const grievances = await prisma.grievance.findMany({
+    where: {
+      studentId: child.id,
+      ...getGrievanceViewWhere(view),
+    },
+    include: {
+      student: { select: { name: true, rollNumber: true } },
+      hostel: { select: { name: true } },
+      mentor: { select: { name: true } },
+    },
+  });
+
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  return res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
+}));
+
+// ── 7. POST /api/parent/message-mentor ──
 router.post("/message-mentor", asyncHandler(async (req, res) => {
   const { message } = req.body;
   if (!message || message.trim().length === 0) {
@@ -298,7 +347,7 @@ router.post("/message-mentor", asyncHandler(async (req, res) => {
   return res.json({ success: true, message: msg });
 }));
 
-// ── 7. GET /api/parent/messages ──
+// ── 8. GET /api/parent/messages ──
 router.get("/messages", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!parent || !parent.childRollNumber) {
@@ -319,7 +368,7 @@ router.get("/messages", asyncHandler(async (req, res) => {
   return res.json({ success: true, messages });
 }));
 
-// ── 8. GET /api/parent/notifications ──
+// ── 9. GET /api/parent/notifications ──
 router.get("/notifications", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!parent) {
@@ -336,7 +385,7 @@ router.get("/notifications", asyncHandler(async (req, res) => {
   return res.json({ success: true, notifications, unreadCount });
 }));
 
-// ── 9. PATCH /api/parent/notifications/:id/read ──
+// ── 10. PATCH /api/parent/notifications/:id/read ──
 router.patch("/notifications/:id/read", asyncHandler(async (req, res) => {
   const parent = await prisma.user.findUnique({ where: { id: req.user.id } });
 

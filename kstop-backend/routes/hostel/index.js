@@ -11,15 +11,15 @@
 //    POST   /api/hostel/scan-leave-qr        → store leave data from a QR code
 //    DELETE /api/hostel/leave-records        → delete selected leave rows
 //    GET    /api/hostel/grievances           → list complaints for this hostel
-//    PATCH  /api/hostel/grievances/:id/status→ mark a complaint open/resolved
+//    PATCH  /api/hostel/grievances/:id/status→ record hostel resolved/unresolved decision
 // ─────────────────────────────────────────────
 
 const express = require("express");
 const multer  = require("multer");
-const path    = require("path");
-const fs      = require("fs");
 const prisma  = require("../../lib/prismaClient");
+const { uploadBuffer, deleteAsset } = require("../../lib/cloudinary");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -49,30 +49,15 @@ function asyncHandler(handler) {
   };
 }
 
-// ── Upload folder setup ───────────────────────────────────────
-// Menu images are stored on disk inside kstop-backend/uploads/mess-menus.
-//
-// IMPORTANT FIX: multer does NOT create this folder by itself.
-// After a fresh `git clone` the folder does not exist, so every
-// upload crashed with "ENOENT: no such file or directory" and the
-// frontend showed "Menu upload failed."
-// mkdirSync with { recursive: true } creates the folder if it is
-// missing and does nothing if it already exists — safe to run
-// every time the server starts.
-const MENU_UPLOAD_DIR = path.join(__dirname, "../../uploads/mess-menus");
-fs.mkdirSync(MENU_UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: MENU_UPLOAD_DIR,
-  filename: (req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-    callback(null, `${Date.now()}-${req.user.id}${extension}`);
-  },
-});
+// ── Mess menu upload setup ──────────────────────────────────
+// Menu images are kept in Cloudinary rather than on the application
+// server. Multer stores the upload in memory only long enough to send it
+// to Cloudinary, so a server restart or redeploy cannot lose the menu.
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max per image
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, callback) => {
     const allowedTypes = ["image/jpeg", "image/png"];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -157,10 +142,8 @@ async function getHostelUser(userId) {
   return user;
 }
 
-// Every hostel action needs to know WHICH hostel it belongs to.
-// 1. If the account is already linked to a hostel, use that.
-// 2. Otherwise create/find a hostel with the same name as the
-//    account and link them (one-time setup, then remembered).
+// Every hostel-staff action needs an explicit assigned hostel.
+// Development quick-login is the only exception and is mapped to its stable demo hostel.
 async function getHostelIdForStaff(userId) {
   const user = await getHostelUser(userId);
 
@@ -200,9 +183,27 @@ async function getHostelIdForStaff(userId) {
   return hostel.id;
 }
 
-// Builds the public URL where an uploaded menu image can be viewed.
-function readImageUrl(req, filename) {
-  return `${req.protocol}://${req.get("host")}/uploads/mess-menus/${filename}`;
+// Resolve the hostel a menu uploader is actually authorized to manage.
+// The frontend never gets to choose this value.
+async function getAuthorizedMessHostelId(req) {
+  if (req.user.role === "hostel") {
+    return getHostelIdForStaff(req.user.id);
+  }
+
+  const student = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { hostelId: true },
+  });
+
+  if (!student) {
+    throw new Error("Student account not found.");
+  }
+
+  if (!student.hostelId) {
+    throw new Error("Your student account is not assigned to a hostel.");
+  }
+
+  return student.hostelId;
 }
 
 // QR codes can contain a JSON string; this turns the raw text into
@@ -313,52 +314,111 @@ router.get("/summary", authorizeRoles("hostel"), asyncHandler(async (req, res) =
 }));
 
 // ── POST /api/hostel/mess-menu ────────────────────────────────
-// Receives one image file (field name "menuImage"), stores it on
-// disk, and saves its URL in the MessMenu table.
+// Students may upload only for their own hostel; hostel staff may
+// upload only for their assigned hostel. The server determines the
+// hostel from the authenticated account.
 router.post(
   "/mess-menu",
-  authorizeRoles("hostel"),
+  authorizeRoles("hostel", "student"),
   upload.single("menuImage"),
   asyncHandler(async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Please upload a JPEG or PNG menu image." });
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a JPEG or PNG menu image.",
+      });
     }
 
-    const hostelId = await getHostelIdForStaff(req.user.id);
-    const menu = await prisma.messMenu.create({
-      data: {
-        hostelId,
-        imageUrl: readImageUrl(req, req.file.filename),
-        uploadedBy: req.user.id,
-      },
-      include: { hostel: { select: { name: true } } },
-    });
+    const hostelId = await getAuthorizedMessHostelId(req);
+    let uploadedAsset;
+    let menuCreated = false;
 
-    res.status(201).json({ success: true, menu });
+    try {
+      uploadedAsset = await uploadBuffer(req.file.buffer, {
+        folder: `kstop/mess-menus/${hostelId}`,
+        resource_type: "image",
+      });
+
+      const previousMenus = await prisma.messMenu.findMany({
+        where: { hostelId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const menu = await prisma.messMenu.create({
+        data: {
+          hostelId,
+          imageUrl: uploadedAsset.secure_url,
+          publicId: uploadedAsset.public_id,
+          uploadedBy: req.user.id,
+        },
+        include: { hostel: { select: { name: true } } },
+      });
+      menuCreated = true;
+
+      // The new menu is now the current menu. Remove all older rows and
+      // their Cloudinary assets only after the new state exists. This also
+      // cleans up any historical duplicate rows from the old implementation.
+      if (previousMenus.length) {
+        await prisma.messMenu.deleteMany({
+          where: { id: { in: previousMenus.map((item) => item.id) } },
+        });
+
+        await Promise.all(
+          previousMenus
+            .filter((item) => item.publicId)
+            .map(async (item) => {
+              try {
+                await deleteAsset(item.publicId);
+              } catch (cleanupError) {
+                console.error("[hostel] old mess menu cleanup failed:", cleanupError);
+              }
+            })
+        );
+      }
+
+      return res.status(201).json({
+        success: true,
+        menu,
+        message: "Mess menu updated successfully.",
+      });
+    } catch (error) {
+      // If the database row was not created, remove the newly uploaded
+      // asset so a failed request does not leave an orphaned Cloudinary file.
+      // Once the new row exists, keep that asset even if old-menu cleanup
+      // encounters a transient failure.
+      if (!menuCreated && uploadedAsset?.public_id) {
+        try {
+          await deleteAsset(uploadedAsset.public_id);
+        } catch (cleanupError) {
+          console.error("[hostel] new mess menu cleanup failed:", cleanupError);
+        }
+      }
+      throw error;
+    }
   })
 );
 
 // ── GET /api/hostel/mess-menus ────────────────────────────────
-// Every logged-in user can view uploaded hostel mess menus.
+// Menus are readable by authenticated users. This endpoint intentionally
+// returns the current menu for each hostel, not historical uploads.
 router.get("/mess-menus", asyncHandler(async (req, res) => {
-  const menus = await prisma.messMenu.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+  const rows = await prisma.messMenu.findMany({
+    orderBy: { createdAt: "desc" },
     include: {
-      hostel: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      hostel: { select: { id: true, name: true } },
     },
   });
 
-  res.json({
-    success: true,
-    menus,
+  // Return only one current menu per hostel. This keeps the API correct
+  // even if older rows exist from before the replacement logic was added.
+  const seenHostels = new Set();
+  const menus = rows.filter((menu) => {
+    if (seenHostels.has(menu.hostelId)) return false;
+    seenHostels.add(menu.hostelId);
+    return true;
   });
+
+  res.json({ success: true, menus });
 }));
 
 
@@ -585,15 +645,19 @@ router.delete("/leave-records", authorizeRoles("hostel"), asyncHandler(async (re
 }));
 
 // ── GET /api/hostel/grievances ────────────────────────────────
-// Complaints for this hostel, most urgent first.
+// Query: view=active|recent|history (default: active).
+// Active excludes fully resolved cases; recent covers the last 30 days.
 router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res) => {
   const hostelId = await getHostelIdForStaff(req.user.id);
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { hostelId },
-    orderBy: [
-      { priorityScore: "desc" },
-      { createdAt: "desc" },
-    ],
+    where: {
+      hostelId,
+      ...getGrievanceViewWhere(view),
+    },
     include: {
       student: {
         select: {
@@ -605,17 +669,25 @@ router.get("/grievances", authorizeRoles("hostel"), asyncHandler(async (req, res
     },
   });
 
-  res.json({ success: true, grievances });
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── PATCH /api/hostel/grievances/:id/status ───────────────────
-// Staff marks a complaint OPEN or RESOLVED.
+// Staff records the hostel-side decision: RESOLVED or OPEN (unresolved).
 router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(async (req, res) => {
   const hostelId = await getHostelIdForStaff(req.user.id);
   const status = req.body.status;
 
   if (!["OPEN", "RESOLVED"].includes(status)) {
-    return res.status(400).json({ success: false, message: "Status must be OPEN or RESOLVED." });
+    return res.status(400).json({
+      success: false,
+      message: "Status must be RESOLVED or OPEN (unresolved).",
+    });
   }
 
   const grievance = await prisma.grievance.findFirst({
@@ -630,6 +702,7 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
     where: { id: grievance.id },
     data: {
       staffStatus: status,
+      staffRespondedAt: new Date(),
       staffResolvedAt: status === "RESOLVED" ? new Date() : null,
     },
     include: {
@@ -637,7 +710,27 @@ router.patch("/grievances/:id/status", authorizeRoles("hostel"), asyncHandler(as
     },
   });
 
-  res.json({ success: true, grievance: updatedGrievance });
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: grievance.studentId,
+        type: "grievance-updated",
+        message: `Your grievance "${grievance.title}" is now ${status.replace("_", " ")}.`,
+        relatedId: grievance.id,
+      },
+      {
+        userId: grievance.mentorId,
+        type: "grievance-updated",
+        message: `Grievance "${grievance.title}" was updated to ${status.replace("_", " ")}.`,
+        relatedId: grievance.id,
+      },
+    ],
+  });
+
+  res.json({
+    success: true,
+    grievance: withGrievanceResolutionStatus(updatedGrievance),
+  });
 }));
 
 module.exports = router;

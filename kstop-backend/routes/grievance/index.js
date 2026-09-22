@@ -10,14 +10,15 @@
 //  Routes:
 //    POST  /api/grievance/create              → student files a complaint
 //    GET   /api/grievance/my-grievances        → student's own complaints
-//    PATCH /api/grievance/:id/respond          → student confirms/disputes
-//                                                 a staff-resolved complaint
+//    PATCH /api/grievance/:id/respond          → student records resolved/unresolved decision
 // ─────────────────────────────────────────────
 
 const express = require("express");
 const prisma = require("../../lib/prismaClient");
 const { verifyToken, authorizeRoles } = require("../../middleware/authMiddleware");
 const { ensureDevStudentAccount } = require("../../lib/devAccounts");
+const { calculateGrievancePriority, CATEGORY_BASE_SCORE } = require("../../lib/grievancePriority");
+const { withGrievanceResolutionStatus, sortGrievances, getGrievanceViewWhere, getResolutionDate } = require("../../lib/grievanceStatus");
 
 const router = express.Router();
 
@@ -34,23 +35,8 @@ function asyncHandler(handler) {
   };
 }
 
-// ── Simple priority score ──────────────────────────────────
-// The SRS describes a full NLP-based ranker (keyword dictionary,
-// 0–100 score) as a future feature — that file doesn't exist yet.
-// For now we use just the category's base score, already documented
-// in prisma/schema.prisma's GrievanceCategory enum comments. This is
-// intentionally simple: swapping this for real NLP scoring later
-// only means changing this one function, nothing else.
-const CATEGORY_BASE_SCORE = {
-  Water: 70,
-  Electrical: 75,
-  Plumbing: 60,
-  Transport: 50,
-  Internet: 45,
-  Cleaning: 40,
-  Food: 55,
-  Other: 30,
-};
+// Priority is calculated by the isolated NLP-style scorer so the API
+// does not need to know how urgency is derived.
 
 // ── POST /api/grievance/create ──
 // Body: { title, description, category }
@@ -105,7 +91,7 @@ router.post("/create", authorizeRoles("student"), asyncHandler(async (req, res) 
       title: title.trim(),
       description: description.trim(),
       category,
-      priorityScore: CATEGORY_BASE_SCORE[category],
+      priorityScore: calculateGrievancePriority({ title, description, category }),
     },
   });
 
@@ -137,21 +123,33 @@ router.post("/create", authorizeRoles("student"), asyncHandler(async (req, res) 
 }));
 
 // ── GET /api/grievance/my-grievances ──
+// Query: view=active|recent|history (default: active).
 router.get("/my-grievances", authorizeRoles("student"), asyncHandler(async (req, res) => {
   await ensureDevStudentAccount(req.user.id);
 
+  const view = ["active", "recent", "history"].includes(req.query.view)
+    ? req.query.view
+    : "active";
+
   const grievances = await prisma.grievance.findMany({
-    where: { studentId: req.user.id },
-    orderBy: { createdAt: "desc" },
+    where: {
+      studentId: req.user.id,
+      ...getGrievanceViewWhere(view),
+    },
   });
 
-  return res.json({ success: true, grievances });
+  const shaped = grievances.map((grievance) => ({
+    ...withGrievanceResolutionStatus(grievance),
+    resolvedAt: getResolutionDate(grievance),
+  }));
+
+  return res.json({ success: true, view, grievances: sortGrievances(shaped, view) });
 }));
 
 // ── PATCH /api/grievance/:id/respond ──
 // Body: { response: "CONFIRMED" | "DISPUTED" }
-// Only usable once staff has marked it RESOLVED — that's the whole
-// point of the dual-confirmation system documented in schema.prisma.
+// The student can record either decision at any point. The overall
+// dashboard status is derived from both staff and student decisions.
 router.patch("/:id/respond", authorizeRoles("student"), asyncHandler(async (req, res) => {
   const { response } = req.body;
 
@@ -165,19 +163,15 @@ router.patch("/:id/respond", authorizeRoles("student"), asyncHandler(async (req,
     return res.status(403).json({ success: false, message: "Not authorized for this grievance." });
   }
 
-  if (grievance.staffStatus !== "RESOLVED") {
-    return res.status(400).json({
-      success: false,
-      message: "You can only confirm or dispute a grievance after staff marks it Resolved.",
-    });
-  }
-
   const updated = await prisma.grievance.update({
     where: { id: grievance.id },
     data: { studentStatus: response, studentRespondedAt: new Date() },
   });
 
-  return res.json({ success: true, grievance: updated });
+  return res.json({
+    success: true,
+    grievance: withGrievanceResolutionStatus(updated),
+  });
 }));
 
 module.exports = router;

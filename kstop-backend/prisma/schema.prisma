@@ -150,6 +150,7 @@ model Grievance {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   staffResolvedAt    DateTime?
+  staffRespondedAt   DateTime?
   studentRespondedAt DateTime?
 
   student User   @relation("StudentGrievances", fields: [studentId], references: [id])
@@ -159,12 +160,14 @@ model Grievance {
   @@index([hostelId])
   @@index([studentId])
   @@index([priorityScore])
+  @@index([studentRespondedAt])
 }
 
 model MessMenu {
   id         String   @id @default(cuid())
   hostelId   String
   imageUrl   String
+  publicId   String?
   uploadedBy String
   createdAt  DateTime @default(now())
 

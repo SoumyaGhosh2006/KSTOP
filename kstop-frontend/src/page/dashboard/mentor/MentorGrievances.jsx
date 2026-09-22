@@ -1,15 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import MentorShell from "../../../components/mentor/MentorShell";
 import api from "../../../utils/api";
 import "./mentor-dashboard.css";
 
-const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "DISPUTED", label: "Disputed" },
-  { key: "OPEN", label: "Open" },
-  { key: "IN_PROGRESS", label: "In Progress" },
-  { key: "RESOLVED", label: "Resolved" },
-];
+
 
 function formatDate(dateStr) {
   if (!dateStr) return "—";
@@ -23,12 +17,12 @@ function formatDate(dateStr) {
 export default function MentorGrievances() {
   const [grievances, setGrievances] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [view, setView] = useState("active");
 
   useEffect(() => {
     async function loadGrievances() {
       try {
-        const res = await api.get("/mentor/grievances");
+        const res = await api.get("/mentor/grievances", { params: { view } });
         setGrievances(res.data.grievances || []);
       } catch (err) {
         console.error("Failed to load grievances:", err);
@@ -37,13 +31,9 @@ export default function MentorGrievances() {
       }
     }
     loadGrievances();
-  }, []);
+  }, [view]);
 
-  const filtered = useMemo(() => {
-    if (filter === "all") return grievances;
-    if (filter === "DISPUTED") return grievances.filter((g) => g.studentStatus === "DISPUTED");
-    return grievances.filter((g) => g.staffStatus === filter);
-  }, [grievances, filter]);
+
 
   if (loading) {
     return (
@@ -56,40 +46,33 @@ export default function MentorGrievances() {
     );
   }
 
-  if (grievances.length === 0) {
-    return (
-      <MentorShell title="Grievances" backTo="/dashboard/mentor">
-        <div className="mentor-surface mentor-empty-state">
-          <h3>No grievances yet</h3>
-          <p>Complaints raised by your mentees will show up here, disputed ones first.</p>
-        </div>
-      </MentorShell>
-    );
-  }
-
   return (
     <MentorShell title="Grievances" backTo="/dashboard/mentor">
       <div className="mentor-dashboard-stack">
         <div className="mentor-filter-row">
-          {FILTERS.map((f) => (
+          {[
+            ["active", "Active"],
+            ["recent", "Recently Resolved"],
+            ["history", "History"],
+          ].map(([key, label]) => (
             <button
-              key={f.key}
-              className={`mentor-filter-pill${filter === f.key ? " is-active" : ""}`}
-              onClick={() => setFilter(f.key)}
+              key={key}
+              className={`mentor-filter-pill${view === key ? " is-active" : ""}`}
+              onClick={() => setView(key)}
             >
-              {f.label}
+              {label}
             </button>
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {grievances.length === 0 ? (
           <div className="mentor-surface mentor-empty-state">
             <h3>Nothing here</h3>
             <p>No grievances match this filter right now.</p>
           </div>
         ) : (
           <div className="mentor-card-list">
-            {filtered.map((g) => (
+            {grievances.map((g) => (
               <article className="mentor-surface mentor-expandable-card" key={g.id}>
                 <div className="mentor-expandable-card__top">
                   <div className="mentor-expandable-card__who">
@@ -100,11 +83,8 @@ export default function MentorGrievances() {
                     </p>
                   </div>
                   <div className="mentor-expandable-card__badges">
-                    {g.studentStatus === "DISPUTED" ? (
-                      <span className="mentor-status-pill is-disputed">Disputed</span>
-                    ) : null}
-                    <span className={`mentor-status-pill is-${g.staffStatus?.toLowerCase()}`}>
-                      {g.staffStatus?.replace("_", " ")}
+                    <span className={`mentor-status-pill is-${g.resolutionStatus?.toLowerCase()}`}>
+                      {g.resolutionStatus?.replace("_", " ")}
                     </span>
                     <span className="mentor-status-pill is-progress">{g.category}</span>
                   </div>
@@ -120,9 +100,15 @@ export default function MentorGrievances() {
                     <span className="value">{formatDate(g.createdAt)}</span>
                   </div>
                   <div className="mentor-detail-row">
-                    <span className="label">Student's Response</span>
-                    <span className="value">{g.studentStatus?.replace("_", " ") || "Pending"}</span>
+                    <span className="label">Status</span>
+                    <span className="value">{g.resolutionStatus?.replace("_", " ") || "In progress"}</span>
                   </div>
+                  {view !== "active" && g.resolvedAt ? (
+                    <div className="mentor-detail-row">
+                      <span className="label">Resolved On</span>
+                      <span className="value">{formatDate(g.resolvedAt)}</span>
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))}
