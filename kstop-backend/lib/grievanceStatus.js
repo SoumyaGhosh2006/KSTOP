@@ -95,13 +95,10 @@ function getGrievanceViewWhere(view = "active") {
     };
   }
 
-  // Active view: everything that is not fully resolved.
+  // Active view: student confirmation closes the grievance even if the
+  // hostel has not recorded a response yet.
   return {
-    OR: [
-      { staffStatus: { not: "RESOLVED" } },
-      { staffStatus: "RESOLVED", studentStatus: "PENDING" },
-      { staffStatus: "RESOLVED", studentStatus: "DISPUTED" },
-    ],
+    studentStatus: { not: "CONFIRMED" },
   };
 }
 
