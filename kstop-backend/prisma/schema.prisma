@@ -150,6 +150,7 @@ model Grievance {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   staffResolvedAt    DateTime?
+  staffRespondedAt   DateTime?
   studentRespondedAt DateTime?
 
   student User   @relation("StudentGrievances", fields: [studentId], references: [id])
