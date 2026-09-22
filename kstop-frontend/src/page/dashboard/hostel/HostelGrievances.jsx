@@ -20,6 +20,16 @@ function getGrievanceLabel(grievance) {
   }
 }
 
+function studentResponseLabel(grievance) {
+  if (!grievance.studentRespondedAt) return "Pending";
+  return grievance.studentStatus === "CONFIRMED" ? "Resolved" : "Unresolved";
+}
+
+function hostelResponseLabel(grievance) {
+  if (!grievance.staffRespondedAt) return "Pending";
+  return grievance.staffStatus === "RESOLVED" ? "Resolved" : "Unresolved";
+}
+
 /**
  * Display and manage student grievances for the hostel.
  */
@@ -94,36 +104,56 @@ export default function HostelGrievances() {
                 {grievance.student?.rollNumber || "Not provided"}
               </p>
 
+              <div className="hostel-grievance-responses">
+                <div className="hostel-response-row">
+                  <span>Hostel response</span>
+                  <strong>{hostelResponseLabel(grievance)}</strong>
+                  {grievance.staffRespondedAt ? (
+                    <small>{new Date(grievance.staffRespondedAt).toLocaleDateString("en-IN")}</small>
+                  ) : null}
+                </div>
+                <div className="hostel-response-row">
+                  <span>Student response</span>
+                  <strong>{studentResponseLabel(grievance)}</strong>
+                  {grievance.studentRespondedAt ? (
+                    <small>{new Date(grievance.studentRespondedAt).toLocaleDateString("en-IN")}</small>
+                  ) : null}
+                </div>
+              </div>
+
               {view === "active" ? (
                 <button
                   type="button"
                   className="hostel-button-muted"
                   onClick={() => setOpenId(isOpen ? null : grievance.id)}
                 >
-                  {isOpen ? "Hide Options" : "Update Status"}
+                  {isOpen ? "Hide response options" : "Record hostel response"}
                 </button>
               ) : null}
 
               {view === "active" && isOpen ? (
                 <div className="hostel-dropdown">
+                  <p className="hostel-note">
+                    Choose the hostel's current response. The selected state will remain visible on this card.
+                  </p>
                   <div className="hostel-actions">
                     <button
                       type="button"
-                      className="hostel-button"
+                      className={"hostel-button" + (grievance.staffStatus === "RESOLVED" && grievance.staffRespondedAt ? " is-selected" : "")}
                       onClick={() => updateStatus(grievance.id, "RESOLVED")}
                     >
-                      Resolved
+                      {grievance.staffStatus === "RESOLVED" && grievance.staffRespondedAt ? "✓ Resolved" : "Mark resolved"}
                     </button>
                     <button
                       type="button"
-                      className="hostel-button-muted"
+                      className={"hostel-button-muted" + (grievance.staffStatus === "OPEN" && grievance.staffRespondedAt ? " is-selected is-unresolved" : "")}
                       onClick={() => updateStatus(grievance.id, "OPEN")}
                     >
-                      Unresolved
+                      {grievance.staffStatus === "OPEN" && grievance.staffRespondedAt ? "✓ Unresolved" : "Mark unresolved"}
                     </button>
                   </div>
                   {grievance.resolutionStatus === "CLASHED" ? (
-                    <p className="hostel-error">The hostel and student decisions do not match.</p>
+                    <p className="hostel-error">The hostel and student decisions do not match. The student's unresolved response keeps this grievance active.</p>
                   ) : null}
                 </div>
               ) : null}
@@ -134,7 +164,13 @@ export default function HostelGrievances() {
 
       {!grievances.length ? (
         <section className="hostel-panel">
-          <p className="hostel-note">No grievances are currently linked to this hostel.</p>
+          <p className="hostel-note">
+            {view === "active"
+              ? "No active grievances. New cases remain here until both sides have responded and the grievance is fully resolved."
+              : view === "recent"
+                ? "No grievances were fully resolved in the last 30 days."
+                : "No resolved grievances are in history yet. Fully resolved grievances remain available here as a permanent register."}
+          </p>
         </section>
       ) : null}
     </HostelShell>
