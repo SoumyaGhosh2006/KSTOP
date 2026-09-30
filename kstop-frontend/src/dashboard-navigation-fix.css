@@ -1,58 +1,120 @@
-/* K-STOP dashboard navigation hardening.
-   Keeps the role sidebar visible on desktop and prevents the mobile
-   menu control from sitting on top of the K-STOP brand. */
+/* Dashboard navigation: compact trigger + hover/click popup.
+   Desktop keeps the clean dashboard while navigation slides over it.
+   Mobile uses the same trigger with an overlay. */
 
 @media (min-width: 901px) {
-  .student-shell > .student-sidebar,
-  .mentor-shell > .mentor-sidebar,
-  .parent-shell > .parent-sidebar,
-  .hostel-shell > .hostel-sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    right: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
+  .student-top-brand,
+  .mentor-top-brand {
     display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translate3d(0, 0, 0) !important;
-    z-index: 1000 !important;
-  }
-
-  .student-shell > .student-sidebar__brand,
-  .mentor-shell > .mentor-sidebar__brand,
-  .parent-shell > .parent-sidebar__brand,
-  .hostel-shell > .hostel-sidebar__brand {
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-}
-
-@media (max-width: 900px) {
-  .student-shell:has(.student-sidebar.is-open) .student-top-brand,
-  .mentor-shell:has(.mentor-sidebar.is-open) .mentor-top-brand {
-    visibility: hidden !important;
-    opacity: 0 !important;
-  }
-
-  .student-sidebar.is-open .student-sidebar__brand,
-  .mentor-sidebar.is-open .mentor-sidebar__brand,
-  .parent-sidebar.is-open .parent-sidebar__brand,
-  .hostel-sidebar.is-open .hostel-sidebar__brand {
-    padding-left: 72px !important;
-  }
-
-  .student-sidebar.is-open,
-  .mentor-sidebar.is-open,
-  .parent-sidebar.is-open,
-  .hostel-sidebar.is-open {
-    z-index: 1000 !important;
+    position: fixed !important;
+    top: 22px !important;
+    left: 76px !important;
+    z-index: 1100 !important;
+    pointer-events: none !important;
   }
 
   .student-menu-button,
   .mentor-menu-button,
   .parent-menu-toggle,
   .hostel-menu-toggle {
-    z-index: 1100 !important;
+    display: inline-flex !important;
+    position: fixed !important;
+    top: 18px !important;
+    left: 18px !important;
+    z-index: 1101 !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .student-sidebar-hover-zone,
+  .mentor-sidebar-hover-zone,
+  .parent-sidebar-hover-zone,
+  .hostel-sidebar-hover-zone {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    width: 22px !important;
+    z-index: 1001 !important;
+  }
+
+  .student-sidebar,
+  .mentor-sidebar,
+  .parent-sidebar,
+  .hostel-sidebar {
+    transform: translateX(-100%) !important;
+    transition: transform 220ms ease, box-shadow 220ms ease !important;
+    width: 248px !important;
+    z-index: 1050 !important;
+    box-shadow: 18px 0 45px rgba(37, 36, 34, 0.18) !important;
+  }
+
+  .student-sidebar-hover-zone:hover ~ .student-sidebar,
+  .student-sidebar:hover,
+  .student-sidebar.is-open,
+  .mentor-sidebar-hover-zone:hover ~ .mentor-sidebar,
+  .mentor-sidebar:hover,
+  .mentor-sidebar.is-open,
+  .parent-sidebar-hover-zone:hover ~ .parent-sidebar,
+  .parent-sidebar:hover,
+  .parent-sidebar.is-open,
+  .hostel-sidebar-hover-zone:hover ~ .hostel-sidebar,
+  .hostel-sidebar:hover,
+  .hostel-sidebar.is-open {
+    transform: translateX(0) !important;
+  }
+
+  .student-sidebar__brand,
+  .mentor-sidebar__brand,
+  .parent-sidebar__brand,
+  .hostel-sidebar__brand {
+    margin-top: 18px !important;
+  }
+
+  .student-main,
+  .mentor-main,
+  .parent-main,
+  .hostel-main {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 86px 38px 58px !important;
+  }
+
+  .student-header,
+  .mentor-header,
+  .parent-header,
+  .hostel-header {
+    max-width: 1220px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .student-top-brand,
+  .mentor-top-brand {
+    display: flex !important;
+  }
+
+  .student-menu-button,
+  .mentor-menu-button,
+  .parent-menu-toggle,
+  .hostel-menu-toggle {
+    display: inline-flex !important;
+  }
+
+  .student-sidebar-hover-zone,
+  .mentor-sidebar-hover-zone,
+  .parent-sidebar-hover-zone,
+  .hostel-sidebar-hover-zone {
+    display: none !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .student-shell:has(.student-sidebar.is-open) .student-top-brand,
+  .mentor-shell:has(.mentor-sidebar.is-open) .mentor-top-brand {
+    opacity: 0 !important;
   }
 }
