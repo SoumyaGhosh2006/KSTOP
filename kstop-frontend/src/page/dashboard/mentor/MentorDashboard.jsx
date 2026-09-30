@@ -90,7 +90,7 @@ export default function MentorDashboard() {
             {grievances.length ? (
               <div className="mentor-signal-list">
                 {grievances.slice(0, 3).map((grievance) => (
-                  <div className="mentor-signal-item" key={grievance.id}><div><strong>{grievance.title || grievance.category || "Grievance"}</strong><span>{grievance.student?.name || "Mentee"} · Priority {grievance.priority ?? "—"}</span></div><em>{grievance.studentStatus === "DISPUTED" ? "Disputed" : "Active"}</em></div>
+                  <div className="mentor-signal-item" key={grievance.id}><div><strong>{grievance.title || grievance.category || "Grievance"}</strong><span>{grievance.student?.name || "Mentee"} · Priority {grievance.priorityScore ?? "—"}</span></div><em>{grievance.studentStatus === "DISPUTED" ? "Disputed" : "Active"}</em></div>
                 ))}
               </div>
             ) : <div className="mentor-mini-empty"><strong>No active grievance signals.</strong><span>Your mentee issue queue is clear.</span></div>}

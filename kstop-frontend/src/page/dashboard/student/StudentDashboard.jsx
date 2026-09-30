@@ -138,7 +138,7 @@ export default function StudentDashboard() {
                 {activeGrievances.slice(0, 3).map((grievance) => (
                   <div className="student-pulse-item" key={grievance.id}>
                     <div><strong>{grievance.title || grievance.category || "Grievance"}</strong><span>{grievance.category || "General issue"}</span></div>
-                    <em>{grievance.priority ?? "—"}</em>
+                    <em>{grievance.priorityScore ?? "—"}</em>
                   </div>
                 ))}
               </div>
