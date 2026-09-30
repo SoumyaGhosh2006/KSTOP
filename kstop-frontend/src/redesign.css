@@ -30,7 +30,7 @@
   background:
     radial-gradient(circle at 88% 7%, rgba(235, 94, 40, 0.13), transparent 22rem),
     radial-gradient(circle at 8% 92%, rgba(37, 36, 34, 0.06), transparent 24rem),
-    url("/kstop-ambient.svg") center / cover scroll,
+    url("/kstop-ambient.svg") center / cover fixed,
     var(--ks-paper) !important;
 }
 
@@ -123,7 +123,7 @@
   color: var(--ks-paper) !important;
   border-right: 1px solid rgba(255, 252, 242, 0.10) !important;
   box-shadow: 22px 0 70px rgba(37, 36, 34, 0.20) !important;
-  backdrop-filter: none !important;
+  backdrop-filter: blur(18px) !important;
 }
 
 .student-sidebar__brand,
@@ -243,7 +243,7 @@
   border-radius: 22px !important;
   background: rgba(255, 252, 242, 0.70) !important;
   box-shadow: var(--ks-shadow-soft) !important;
-  backdrop-filter: none !important;
+  backdrop-filter: blur(16px) !important;
 }
 
 .student-header::after,
@@ -306,8 +306,8 @@
   border-radius: 20px !important;
   background: rgba(255, 255, 255, 0.70) !important;
   box-shadow: var(--ks-shadow-soft) !important;
-  backdrop-filter: none !important;
-  transition: transform 140ms ease, border-color 140ms ease !important;
+  backdrop-filter: blur(14px) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease !important;
 }
 
 .student-surface:hover,
@@ -330,7 +330,7 @@
   background:
     radial-gradient(circle at 88% 20%, rgba(255, 252, 242, 0.20), transparent 11rem),
     linear-gradient(135deg, #252422 0%, #403d39 58%, #6b3020 100%) !important;
-  box-shadow: 0 14px 36px rgba(37, 36, 34, 0.14) !important;
+  box-shadow: 0 24px 70px rgba(37, 36, 34, 0.22) !important;
 }
 
 .student-hero-card::before,
@@ -492,7 +492,7 @@
   color: var(--ks-paper) !important;
   box-shadow: 0 10px 24px rgba(37, 36, 34, 0.13) !important;
   font-weight: 800 !important;
-  transition: transform 120ms ease, background 120ms ease !important;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease !important;
 }
 
 .student-primary-button:hover,
@@ -501,7 +501,7 @@
 .hostel-button:hover {
   background: var(--ks-orange) !important;
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(235, 94, 40, 0.14) !important;
+  box-shadow: 0 14px 30px rgba(235, 94, 40, 0.20) !important;
 }
 
 .student-secondary-button,
