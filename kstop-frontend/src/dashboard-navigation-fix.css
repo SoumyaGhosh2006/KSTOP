@@ -1,0 +1,58 @@
+/* K-STOP dashboard navigation hardening.
+   Keeps the role sidebar visible on desktop and prevents the mobile
+   menu control from sitting on top of the K-STOP brand. */
+
+@media (min-width: 901px) {
+  .student-shell > .student-sidebar,
+  .mentor-shell > .mentor-sidebar,
+  .parent-shell > .parent-sidebar,
+  .hostel-shell > .hostel-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+    z-index: 1000 !important;
+  }
+
+  .student-shell > .student-sidebar__brand,
+  .mentor-shell > .mentor-sidebar__brand,
+  .parent-shell > .parent-sidebar__brand,
+  .hostel-shell > .hostel-sidebar__brand {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .student-shell:has(.student-sidebar.is-open) .student-top-brand,
+  .mentor-shell:has(.mentor-sidebar.is-open) .mentor-top-brand {
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .student-sidebar.is-open .student-sidebar__brand,
+  .mentor-sidebar.is-open .mentor-sidebar__brand,
+  .parent-sidebar.is-open .parent-sidebar__brand,
+  .hostel-sidebar.is-open .hostel-sidebar__brand {
+    padding-left: 72px !important;
+  }
+
+  .student-sidebar.is-open,
+  .mentor-sidebar.is-open,
+  .parent-sidebar.is-open,
+  .hostel-sidebar.is-open {
+    z-index: 1000 !important;
+  }
+
+  .student-menu-button,
+  .mentor-menu-button,
+  .parent-menu-toggle,
+  .hostel-menu-toggle {
+    z-index: 1100 !important;
+  }
+}
