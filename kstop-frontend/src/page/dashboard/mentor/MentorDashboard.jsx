@@ -4,10 +4,11 @@ import MentorShell from "../../../components/mentor/MentorShell";
 import api from "../../../utils/api";
 import "./mentor-dashboard.css";
 
-// The home screen is deliberately just a summary — counts, one focus
-// callout, quick actions. The actual lists (leave queue, mentees,
-// grievances, messages) each live on their own page in the sidebar,
-// so we don't repeat that content here.
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 export default function MentorDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,6 @@ export default function MentorDashboard() {
           api.get("/mentor/messages"),
           api.get("/mentor/notifications"),
         ]);
-
         const mentees = menteesRes.data.mentees || [];
         setMenteeCount(mentees.length);
         setHostelCount(new Set(mentees.map((m) => m.hostel?.name).filter(Boolean)).size);
@@ -46,125 +46,58 @@ export default function MentorDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <MentorShell title="Mentor Dashboard">
-        <div className="mentor-surface mentor-panel-card mentor-loading-row">
-          <span className="mentor-spinner" />
-          Loading your dashboard...
-        </div>
-      </MentorShell>
-    );
+    return <MentorShell title="Mentor Dashboard"><div className="mentor-surface mentor-panel-card mentor-loading-row"><span className="mentor-spinner" />Loading your dashboard...</div></MentorShell>;
   }
 
-  const urgentCount = pendingLeaves.filter((leave) => {
+  const urgentLeaves = pendingLeaves.filter((leave) => {
     const attendance = leave.student?.attendancePercentage;
     return leave.type === "Medical" || (typeof attendance === "number" && attendance < 75);
-  }).length;
-
+  });
   const disputedCount = grievances.filter((g) => g.studentStatus === "DISPUTED").length;
   const openGrievanceCount = grievances.filter((g) => g.staffStatus !== "RESOLVED").length;
 
   return (
     <MentorShell title="Mentor Dashboard">
-      <div className="mentor-dashboard-stack">
-        {/* Greeting hero */}
-        <section className="mentor-surface mentor-hero-card">
-          <span className="mentor-eyebrow">Mentor Portal</span>
-          <h2>You're mentoring {menteeCount} student{menteeCount === 1 ? "" : "s"}{hostelCount ? ` across ${hostelCount} hostel${hostelCount === 1 ? "" : "s"}` : ""}.</h2>
-          <p>Everything you need — leave approvals, grievances, and messages from parents — lives in the menu on the left.</p>
+      <div className="mentor-dashboard-v2">
+        <section className="mentor-command-header">
+          <div><span className="mentor-eyebrow">Mentor command center</span><h2>Your students, distilled into today's signals.</h2><p>Review what needs attention here. Full approvals, mentees, grievances and conversations remain in their dedicated pages.</p></div>
+          <div className="mentor-command-metrics"><div><strong>{menteeCount}</strong><span>Mentees</span></div><div><strong>{hostelCount}</strong><span>Hostels</span></div></div>
         </section>
 
-        {/* Today's focus — the one thing worth surfacing on the home screen */}
-        {pendingLeaves.length > 0 ? (
-          <section className={`mentor-surface mentor-alert-card${urgentCount === 0 ? " is-calm" : ""}`}>
-            <div className="mentor-alert-card__copy">
-              <strong>
-                {urgentCount > 0
-                  ? `${urgentCount} leave request${urgentCount === 1 ? "" : "s"} need${urgentCount === 1 ? "s" : ""} urgent attention`
-                  : `${pendingLeaves.length} leave request${pendingLeaves.length === 1 ? "" : "s"} waiting on you`}
-              </strong>
-              <span>
-                {urgentCount > 0
-                  ? "Medical leaves and students below 75% attendance are prioritised at the top of the queue."
-                  : "Parents have already approved these — your review is the last step."}
-              </span>
-            </div>
-            <button className="mentor-secondary-button" onClick={() => navigate("/dashboard/mentor/leave-queue")}>
-              Review now
-            </button>
-          </section>
-        ) : (
-          <section className="mentor-surface mentor-alert-card is-calm">
-            <div className="mentor-alert-card__copy">
-              <strong>All caught up</strong>
-              <span>No leave requests are waiting on your approval right now.</span>
-            </div>
-          </section>
-        )}
+        <section className="mentor-focus-grid">
+          <article className="mentor-focus-card is-urgent" onClick={() => navigate("/dashboard/mentor/leave-queue")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/dashboard/mentor/leave-queue")}><span className="mentor-eyebrow">Leave queue</span><strong>{pendingLeaves.length}</strong><p>requests waiting for your decision</p><small>{urgentLeaves.length} need priority attention</small></article>
+          <article className="mentor-focus-card" onClick={() => navigate("/dashboard/mentor/grievances")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/dashboard/mentor/grievances")}><span className="mentor-eyebrow">Grievances</span><strong>{openGrievanceCount}</strong><p>open issues across your mentees</p><small>{disputedCount} currently disputed</small></article>
+          <article className="mentor-focus-card" onClick={() => navigate("/dashboard/mentor/messages")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/dashboard/mentor/messages")}><span className="mentor-eyebrow">Messages</span><strong>{messageCount}</strong><p>messages in your mentor inbox</p><small>Open the conversation page to respond</small></article>
+          <article className="mentor-focus-card" onClick={() => navigate("/dashboard/mentor/notifications")} role="button" tabIndex={0} onKeyDown={(event) => event.key === "Enter" && navigate("/dashboard/mentor/notifications")}><span className="mentor-eyebrow">Notifications</span><strong>{unreadNotifs}</strong><p>unread updates</p><small>Notifications refresh automatically</small></article>
+        </section>
 
-        {/* Live stat tiles — counts only, no repeated list content */}
-        <section className="mentor-four-grid">
-          <article
-            className="mentor-surface mentor-tile"
-            onClick={() => navigate("/dashboard/mentor/leave-queue")}
-          >
-            <span className="mentor-tile__icon">🗂️</span>
-            <span className="mentor-eyebrow" style={{ color: "#7d7469" }}>Leave Queue</span>
-            <h3>{pendingLeaves.length}</h3>
-            <p>Awaiting your review</p>
-            {urgentCount > 0 ? <small>{urgentCount} urgent</small> : null}
+        <section className="mentor-dashboard-columns">
+          <article className="mentor-surface mentor-dashboard-list-panel">
+            <div className="mentor-panel-heading"><div><span className="mentor-eyebrow">Attention queue</span><h3>Latest leave requests</h3></div><span className="mentor-panel-caption">Top {Math.min(3, pendingLeaves.length)}</span></div>
+            {pendingLeaves.length ? (
+              <div className="mentor-signal-list">
+                {pendingLeaves.slice(0, 3).map((leave) => {
+                  const attendance = leave.student?.attendancePercentage;
+                  const urgent = leave.type === "Medical" || (typeof attendance === "number" && attendance < 75);
+                  return <div className="mentor-signal-item" key={leave.id}><div><strong>{leave.student?.name || "Student"}</strong><span>{leave.type} · {formatDate(leave.startDate)} – {formatDate(leave.endDate)}</span></div><em className={urgent ? "is-urgent" : ""}>{urgent ? "Priority" : "Review"}</em></div>;
+                })}
+              </div>
+            ) : <div className="mentor-mini-empty"><strong>All caught up.</strong><span>No leave requests are waiting for review.</span></div>}
           </article>
 
-          <article
-            className="mentor-surface mentor-tile"
-            onClick={() => navigate("/dashboard/mentor/mentees")}
-          >
-            <span className="mentor-tile__icon">🎓</span>
-            <span className="mentor-eyebrow" style={{ color: "#7d7469" }}>My Mentees</span>
-            <h3>{menteeCount}</h3>
-            <p>Students under your mentorship</p>
-          </article>
-
-          <article
-            className="mentor-surface mentor-tile"
-            onClick={() => navigate("/dashboard/mentor/grievances")}
-          >
-            <span className="mentor-tile__icon">📮</span>
-            <span className="mentor-eyebrow" style={{ color: "#7d7469" }}>Grievances</span>
-            <h3>{openGrievanceCount}</h3>
-            <p>Still open</p>
-            {disputedCount > 0 ? <small>{disputedCount} disputed</small> : null}
-          </article>
-
-          <article
-            className="mentor-surface mentor-tile"
-            onClick={() => navigate("/dashboard/mentor/notifications")}
-          >
-            <span className="mentor-tile__icon">🔔</span>
-            <span className="mentor-eyebrow" style={{ color: "#7d7469" }}>Notifications</span>
-            <h3>{unreadNotifs}</h3>
-            <p>Unread updates</p>
+          <article className="mentor-surface mentor-dashboard-list-panel">
+            <div className="mentor-panel-heading"><div><span className="mentor-eyebrow">Student issues</span><h3>Grievance pulse</h3></div><span className="mentor-panel-caption">Live summary</span></div>
+            {grievances.length ? (
+              <div className="mentor-signal-list">
+                {grievances.slice(0, 3).map((grievance) => (
+                  <div className="mentor-signal-item" key={grievance.id}><div><strong>{grievance.title || grievance.category || "Grievance"}</strong><span>{grievance.student?.name || "Mentee"} · Priority {grievance.priorityScore ?? "—"}</span></div><em>{grievance.studentStatus === "DISPUTED" ? "Disputed" : "Active"}</em></div>
+                ))}
+              </div>
+            ) : <div className="mentor-mini-empty"><strong>No active grievance signals.</strong><span>Your mentee issue queue is clear.</span></div>}
           </article>
         </section>
 
-        {/* Quick actions */}
-        <section className="mentor-surface mentor-panel-card">
-          <span className="mentor-eyebrow" style={{ color: "#7d7469" }}>Quick Actions</span>
-          <div className="mentor-quick-actions">
-            <button className="mentor-secondary-button" onClick={() => navigate("/dashboard/mentor/leave-queue")}>
-              Review Leave Queue
-            </button>
-            <button className="mentor-dark-button" onClick={() => navigate("/dashboard/mentor/mentees")}>
-              View My Mentees
-            </button>
-            <button className="mentor-dark-button" onClick={() => navigate("/dashboard/mentor/grievances")}>
-              Check Grievances
-            </button>
-            <button className="mentor-dark-button" onClick={() => navigate("/dashboard/mentor/messages")}>
-              Read Messages ({messageCount})
-            </button>
-          </div>
-        </section>
+        <p className="mentor-dashboard-note">Click a summary card to open the full operational page. The dashboard itself stays read-only so decisions happen only in the dedicated workflows.</p>
       </div>
     </MentorShell>
   );
