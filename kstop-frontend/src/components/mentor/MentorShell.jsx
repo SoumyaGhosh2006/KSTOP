@@ -56,6 +56,7 @@ export default function MentorShell({ title, backTo, children }) {
       <button type="button" className={"mentor-menu-button" + (isSidebarOpen ? " is-open" : "")} onClick={toggleSidebar} aria-label="Open navigation menu">
         <span /><span /><span />
       </button>
+      <div className="mentor-sidebar-hover-zone" aria-hidden="true" />
 
       {isMobile && isSidebarOpen ? <button type="button" className="mentor-sidebar-overlay" onClick={closeSidebar} aria-label="Close navigation menu" /> : null}
 
