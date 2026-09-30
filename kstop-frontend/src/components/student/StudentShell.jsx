@@ -19,85 +19,38 @@ export default function StudentShell({ title, backTo, children }) {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 900px)");
-
     function syncViewport(event) {
       setIsMobile(event.matches);
       setIsSidebarOpen(false);
     }
-
     syncViewport(mediaQuery);
     mediaQuery.addEventListener("change", syncViewport);
-
     return () => mediaQuery.removeEventListener("change", syncViewport);
   }, []);
 
-  function openSidebar() {
-    setIsSidebarOpen(true);
-  }
+  function closeSidebar() { setIsSidebarOpen(false); }
+  function toggleSidebar() { setIsSidebarOpen((current) => !current); }
+  function handleLogout() { logout(); navigate("/login"); }
 
-  function closeSidebar() {
-    setIsSidebarOpen(false);
-  }
-
-  function toggleSidebar() {
-    setIsSidebarOpen((current) => !current);
-  }
-
-  function handleLogout() {
-    logout();
-    navigate("/login");
-  }
-
-  // These fallback labels keep the shell readable even when user data is incomplete.
   const name = user?.name || "Student";
-
-  // Do not show fake hostel or room data.
-  // Real hostel information should come from the database.
   const hostelLabel = user?.hostel?.name || user?.hostelName || "";
   const showBack = Boolean(backTo);
   const currentPath = location.pathname;
 
   return (
     <div className="student-shell">
-      <div className="student-top-brand" aria-label="K-STOP brand">
-        <span className="student-top-brand__name">K-STOP</span>
-      </div>
+      <div className="student-top-brand" aria-label="K-STOP brand"><span className="student-top-brand__name">K-STOP</span></div>
 
-      <button
-        type="button"
-        className={`student-menu-button${isSidebarOpen ? " is-open" : ""}`}
-        onClick={toggleSidebar}
-        onMouseEnter={!isMobile ? openSidebar : undefined}
-        aria-label="Open navigation menu"
-      >
-        <span />
-        <span />
-        <span />
+      <button type="button" className={"student-menu-button" + (isSidebarOpen ? " is-open" : "")} onClick={toggleSidebar} aria-label="Open navigation menu">
+        <span /><span /><span />
       </button>
 
-      {/* Desktop hover zone makes the sidebar easy to discover without forcing it open. */}
-      {!isMobile ? (
-        <div
-          className="student-sidebar-hover-zone"
-          onMouseEnter={openSidebar}
-          aria-hidden="true"
-        />
-      ) : null}
+      {isMobile && isSidebarOpen ? <button type="button" className="student-sidebar-overlay" onClick={closeSidebar} aria-label="Close navigation menu" /> : null}
 
-      {isMobile && isSidebarOpen ? (
-        <button
-          type="button"
-          className="student-sidebar-overlay"
-          onClick={closeSidebar}
-          aria-label="Close navigation menu"
-        />
-      ) : null}
-
-      <aside
-        className={`student-sidebar${isSidebarOpen ? " is-open" : ""}${isMobile ? " is-mobile" : ""}`}
-        onMouseLeave={!isMobile ? closeSidebar : undefined}
-      >
+      <aside className={"student-sidebar" + (isSidebarOpen ? " is-open" : "") + (isMobile ? " is-mobile" : "")}>
         <div className="student-sidebar__brand">
+          <strong>K-STOP</strong>
+          <span>Student Portal</span>
           <p>Hi, {name}</p>
         </div>
 
@@ -108,11 +61,8 @@ export default function StudentShell({ title, backTo, children }) {
               to={item.path}
               end={item.path === "/dashboard/student"}
               className={({ isActive }) => {
-                const matchesNested =
-                  item.path !== "/dashboard/student" &&
-                  currentPath.startsWith(`${item.path}/`);
-
-                return `student-sidebar__link${isActive || matchesNested ? " is-active" : ""}`;
+                const matchesNested = item.path !== "/dashboard/student" && currentPath.startsWith(item.path + "/");
+                return "student-sidebar__link" + (isActive || matchesNested ? " is-active" : "");
               }}
               onClick={isMobile ? closeSidebar : undefined}
             >
@@ -121,35 +71,17 @@ export default function StudentShell({ title, backTo, children }) {
           ))}
         </nav>
 
-        {/* Logout lives in the shell so every student page gets the same exit action. */}
-        <button
-          type="button"
-          className="student-sidebar__logout"
-          onClick={handleLogout}
-        >
-          Log out
-        </button>
+        <button type="button" className="student-sidebar__logout" onClick={handleLogout}>Log out</button>
       </aside>
 
-      {/* The page-specific content is rendered here while the shell stays shared. */}
       <main className="student-main">
         <header className="student-header">
-          {showBack ? (
-            <button
-              type="button"
-              className="student-back-link"
-              onClick={() => navigate(backTo)}
-            >
-              {"<- Home"}
-            </button>
-          ) : null}
-
+          {showBack ? <button type="button" className="student-back-link" onClick={() => navigate(backTo)}>{"<- Home"}</button> : null}
           <div className="student-header__copy">
             <h1>{title}</h1>
             {showBack && hostelLabel ? <p>{hostelLabel}</p> : null}
           </div>
         </header>
-
         {children}
       </main>
     </div>
