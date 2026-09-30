@@ -23,9 +23,10 @@ export default function HostelShell({ title, eyebrow, children }) {
 
   return (
     <div className="hostel-shell">
-      <button type="button" className="hostel-menu-toggle" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+      <button type="button" className={"hostel-menu-toggle" + (sidebarOpen ? " is-open" : "")} aria-label="Open menu" onClick={() => setSidebarOpen((current) => !current)}>
         <span /><span /><span />
       </button>
+      <div className="hostel-sidebar-hover-zone" aria-hidden="true" />
 
       <nav className={"hostel-sidebar" + (sidebarOpen ? " is-open" : "")}>
         <div className="hostel-sidebar__brand">
