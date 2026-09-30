@@ -113,8 +113,18 @@
 }
 
 @media (min-width: 901px) {
+  /* Once navigation is being revealed — by hover or click — hide the
+     floating dashboard brand so it never sits underneath the menu button
+     or overlaps the expanded sidebar. */
   .student-shell:has(.student-sidebar.is-open) .student-top-brand,
-  .mentor-shell:has(.mentor-sidebar.is-open) .mentor-top-brand {
+  .student-shell:has(.student-sidebar:hover) .student-top-brand,
+  .student-shell:has(.student-sidebar-hover-zone:hover) .student-top-brand,
+  .student-shell:has(.student-menu-button:hover) .student-top-brand,
+  .mentor-shell:has(.mentor-sidebar.is-open) .mentor-top-brand,
+  .mentor-shell:has(.mentor-sidebar:hover) .mentor-top-brand,
+  .mentor-shell:has(.mentor-sidebar-hover-zone:hover) .mentor-top-brand,
+  .mentor-shell:has(.mentor-menu-button:hover) .mentor-top-brand {
     opacity: 0 !important;
+    visibility: hidden !important;
   }
 }
