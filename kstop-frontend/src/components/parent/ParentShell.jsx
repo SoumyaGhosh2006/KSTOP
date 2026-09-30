@@ -36,9 +36,10 @@ export default function ParentShell({ title, eyebrow, backTo, children }) {
 
   return (
     <div className="parent-shell">
-      <button type="button" className="parent-menu-toggle" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+      <button type="button" className={"parent-menu-toggle" + (sidebarOpen ? " is-open" : "")} aria-label="Open menu" onClick={() => setSidebarOpen((current) => !current)}>
         <span /><span /><span />
       </button>
+      <div className="parent-sidebar-hover-zone" aria-hidden="true" />
 
       <nav className={"parent-sidebar" + (sidebarOpen ? " is-open" : "")}>
         <div className="parent-sidebar__brand">
