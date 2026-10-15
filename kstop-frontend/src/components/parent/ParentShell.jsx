@@ -1,78 +1,85 @@
-import { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
 import api from "../../utils/api";
-import "../../page/dashboard/parent/parent-dashboard.css";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import { Home, Clock, FileText, AlertCircle, MessageSquare, Bell } from "../Icons";
 
-const NAV_LINKS = [
-  { to: "/dashboard/parent", label: "Dashboard", end: true },
-  { to: "/dashboard/parent/pending-leaves", label: "Pending Approvals" },
-  { to: "/dashboard/parent/leave-history", label: "Leave History" },
-  { to: "/dashboard/parent/grievances", label: "Grievances" },
-  { to: "/dashboard/parent/message-mentor", label: "Message Mentor" },
-  { to: "/dashboard/parent/notifications", label: "Notifications" },
-];
-
-export default function ParentShell({ title, eyebrow, backTo, children }) {
+export default function ParentShell({
+  title = "Parent Dashboard",
+  eyebrow,
+  backTo,
+  actionButton,
+  children,
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { user, logout } = useAuthContext();
 
   useEffect(() => {
+    let mounted = true;
     async function fetchUnread() {
       try {
         const res = await api.get("/parent/notifications");
-        setUnreadCount(res.data.unreadCount || 0);
-      } catch {}
+        if (mounted) {
+          setUnreadCount(res.data.unreadCount || 0);
+        }
+      } catch {
+        // silent fallback
+      }
     }
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
-  function handleLogout() { logout(); navigate("/login"); }
-  const displayName = user?.name || "Parent";
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
+
+  const navItems = [
+    { label: "Dashboard", path: "/dashboard/parent", icon: Home, end: true },
+    { label: "Pending Approvals", path: "/dashboard/parent/pending-leaves", icon: Clock },
+    { label: "Leave History", path: "/dashboard/parent/leave-history", icon: FileText },
+    { label: "Grievances", path: "/dashboard/parent/grievances", icon: AlertCircle },
+    { label: "Message Mentor", path: "/dashboard/parent/message-mentor", icon: MessageSquare },
+    {
+      label: "Notifications",
+      path: "/dashboard/parent/notifications",
+      icon: Bell,
+      count: unreadCount,
+    },
+  ];
 
   return (
-    <div className="parent-shell">
-      <button type="button" className={"parent-menu-toggle" + (sidebarOpen ? " is-open" : "")} aria-label="Open menu" onClick={() => setSidebarOpen((current) => !current)}>
-        <span /><span /><span />
-      </button>
-      <div className="parent-sidebar-hover-zone" aria-hidden="true" />
+    <div className="parent-shell min-h-screen bg-[#fffcf2] text-[#252422] flex flex-col lg:pl-64">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        roleTitle="Parent Portal"
+        user={user}
+        navItems={navItems}
+        onLogout={handleLogout}
+      />
 
-      <nav className={"parent-sidebar" + (sidebarOpen ? " is-open" : "")}>
-        <div className="parent-sidebar__brand">
-          <strong>K-STOP</strong>
-          <span>Parent Portal</span>
-          <p className="parent-sidebar__greeting">Hi, {displayName}</p>
-        </div>
+      <Navbar
+        title={title}
+        subtitle={eyebrow || (user?.childRollNumber ? `Child Roll: ${user.childRollNumber}` : "Parent Portal")}
+        backTo={backTo}
+        onNavigateBack={backTo ? () => navigate(backTo) : undefined}
+        onToggleSidebar={() => setSidebarOpen(true)}
+        notificationCount={unreadCount}
+        onNotificationClick={() => navigate("/dashboard/parent/notifications")}
+        actionButton={actionButton}
+      />
 
-        <div className="parent-sidebar__nav">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => "parent-sidebar__link" + (isActive ? " is-active" : "")} onClick={() => setSidebarOpen(false)}>
-              {link.label}
-              {link.to === "/dashboard/parent/notifications" && unreadCount > 0 ? <span className="parent-nav-badge">{unreadCount}</span> : null}
-            </NavLink>
-          ))}
-        </div>
-
-        <button type="button" className="parent-sidebar__logout" onClick={handleLogout}>Log out</button>
-      </nav>
-
-      {sidebarOpen ? <button type="button" className="parent-sidebar-overlay" aria-label="Close menu" onClick={() => setSidebarOpen(false)} /> : null}
-
-      <main className="parent-main">
-        <header className="parent-header">
-          <div>
-            {eyebrow ? <p>{eyebrow}</p> : null}
-            {backTo ? <button type="button" className="parent-back-link" onClick={() => navigate(backTo)}>{"<- Back"}</button> : null}
-            <h1>{title}</h1>
-          </div>
-          <button type="button" className="parent-notif-bell" onClick={() => navigate("/dashboard/parent/notifications")} aria-label="Notifications">
-            🔔{unreadCount > 0 ? <span className="parent-notif-badge">{unreadCount}</span> : null}
-          </button>
-        </header>
+      <main className="parent-main flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {children}
       </main>
     </div>

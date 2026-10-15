@@ -22,14 +22,21 @@ import ResetPassword from "./page/ResetPassword";
 import StudentDashboard from "./page/dashboard/student/StudentDashboard";
 import NewLeave from "./page/dashboard/student/NewLeave";
 import MyLeaves from "./page/dashboard/student/MyLeaves";
+import GatePass from "./page/dashboard/student/GatePass";
 import MessMenu from "./page/dashboard/student/MessMenu";
 import MyGrievances from "./page/dashboard/student/MyGrievances";
+import LeaveDetail from "./page/dashboard/student/LeaveDetail";
+import LeaveConfirmation from "./page/dashboard/student/LeaveConfirmation";
+import GrievanceDetail from "./page/dashboard/student/GrievanceDetail";
+import NewGrievance from "./page/dashboard/student/NewGrievance";
 import MentorDashboard from "./page/dashboard/mentor/MentorDashboard";
 import LeaveQueue from "./page/dashboard/mentor/LeaveQueue";
 import MenteesList from "./page/dashboard/mentor/MenteesList";
 import MentorGrievances from "./page/dashboard/mentor/MentorGrievances";
-import MentorMessages from "./page/dashboard/mentor/MentorMessages";
-import MentorNotifications from "./page/dashboard/mentor/MentorNotifications";
+import MentorMessages from "./page/dashboard/mentor/Mentormessages";
+import MentorNotifications from "./page/dashboard/mentor/Mentornotifications";
+import Announcements from "./page/dashboard/mentor/Announcements";
+import CounselingLog from "./page/dashboard/mentor/CounselingLog";
 import HostelDashboard from "./page/dashboard/hostel/HostelDashboard";
 import MessMenuUpload from "./page/dashboard/hostel/MessMenuUpload";
 import MessFeedback from "./page/dashboard/hostel/MessFeedback";
@@ -42,6 +49,7 @@ import ParentLeaveHistory from "./page/dashboard/parent/ParentLeaveHistory";
 import ParentMessageMentor from "./page/dashboard/parent/ParentMessageMentor";
 import ParentNotifications from "./page/dashboard/parent/ParentNotifications";
 import ParentGrievances from "./page/dashboard/parent/ParentGrievances";
+import Notifications from "./page/Notifications";
 
 /**
  * Renders the application's public authentication pages and role-protected dashboard routes.
@@ -89,6 +97,14 @@ export default function App() {
             }
           />
           <Route
+            path="/dashboard/student/gate-pass"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <GatePass />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/student/mess-menu"
             element={
               <ProtectedRoute requiredRole="student">
@@ -101,6 +117,38 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="student">
                 <MyGrievances />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/leaves/:id"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <LeaveDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/leave-confirmation"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <LeaveConfirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/new-grievance"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <NewGrievance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/student/grievances/:id"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <GrievanceDetail />
               </ProtectedRoute>
             }
           />
@@ -131,6 +179,14 @@ export default function App() {
             }
           />
           <Route
+            path="/dashboard/mentor/counseling"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <CounselingLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/mentor/grievances"
             element={
               <ProtectedRoute requiredRole="mentor">
@@ -151,6 +207,14 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="mentor">
                 <MentorNotifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mentor/announcements"
+            element={
+              <ProtectedRoute requiredRole="mentor">
+                <Announcements />
               </ProtectedRoute>
             }
           />
@@ -260,7 +324,7 @@ export default function App() {
             path="/notifications"
             element={
               <ProtectedRoute>
-                <div>Notifications Page (TODO)</div>
+                <Notifications />
               </ProtectedRoute>
             }
           />

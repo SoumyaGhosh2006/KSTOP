@@ -1,77 +1,91 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MentorShell from "../../../components/mentor/MentorShell";
+import Badge from "../../../components/Badge";
+import SkeletonLoader from "../../../components/SkeletonLoader";
+import EmptyState from "../../../components/EmptyState";
 import api from "../../../utils/api";
-import "./mentor-dashboard.css";
+import { formatDateTime } from "../../../utils/formatDate";
+import { Bell, Check, Clock } from "../../../components/Icons";
 
-export default function MentorMessages() {
-  const [messages, setMessages] = useState([]);
-  const [studentNames, setStudentNames] = useState({});
+export default function MentorNotifications() {
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [messagesRes, menteesRes] = await Promise.all([
-          api.get("/mentor/messages"),
-          api.get("/mentor/mentees"),
-        ]);
-
-        const nameMap = {};
-        (menteesRes.data.mentees || []).forEach((m) => {
-          nameMap[m.id] = `${m.name} (${m.rollNumber})`;
-        });
-
-        setStudentNames(nameMap);
-        setMessages(messagesRes.data.messages || []);
-      } catch (err) {
-        console.error("Failed to load messages:", err);
-      } finally {
-        setLoading(false);
-      }
+  async function loadNotifications() {
+    try {
+      const res = await api.get("/mentor/notifications");
+      setNotifications(res.data.notifications || []);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
-
-  if (loading) {
-    return (
-      <MentorShell title="Messages" backTo="/dashboard/mentor">
-        <div className="mentor-surface mentor-panel-card mentor-loading-row">
-          <span className="mentor-spinner" />
-          Loading messages...
-        </div>
-      </MentorShell>
-    );
   }
 
-  if (messages.length === 0) {
-    return (
-      <MentorShell title="Messages" backTo="/dashboard/mentor">
-        <div className="mentor-surface mentor-empty-state">
-          <h3>No messages yet</h3>
-          <p>When a parent messages you about their child, it'll appear here.</p>
-        </div>
-      </MentorShell>
-    );
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  async function markAsRead(id) {
+    try {
+      await api.patch(`/mentor/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   }
 
   return (
-    <MentorShell title="Messages" backTo="/dashboard/mentor">
-      <div className="mentor-card-list">
-        {messages.map((m) => (
-          <article className="mentor-surface mentor-message-card" key={m.id}>
-            <span className="mentor-message-card__from">
-              {studentNames[m.studentId] ? `Parent of ${studentNames[m.studentId]}` : "A parent"}
-            </span>
-            <p className="mentor-message-card__body">{m.message}</p>
-            <span className="mentor-message-card__time">
-              {new Date(m.createdAt).toLocaleString("en-IN")}
-            </span>
-          </article>
-        ))}
+    <MentorShell
+      title="Mentor Notifications"
+      subtitle="Activity & Alert Feed"
+      backTo="/dashboard/mentor"
+    >
+      <div className="max-w-3xl mx-auto space-y-4">
+        {loading ? (
+          <SkeletonLoader type="card" count={3} />
+        ) : notifications.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title="No notifications"
+            description="You have no unread alerts right now. Whenever a parent approves a leave request or a student files an urgent grievance, an alert will be posted here."
+          />
+        ) : (
+          <div className="space-y-3">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-4 ${
+                  notif.read
+                    ? "bg-white border-[rgba(64,61,57,0.12)] opacity-85"
+                    : "bg-white border-l-4 border-l-[#eb5e28] border-[rgba(64,61,57,0.18)] shadow-sm"
+                }`}
+              >
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-[#252422] m-0 leading-relaxed">
+                    {notif.message}
+                  </p>
+                  <span className="text-[10px] text-[#756f67] block font-mono">
+                    {formatDateTime(notif.createdAt)}
+                  </span>
+                </div>
+
+                {!notif.read && (
+                  <button
+                    type="button"
+                    onClick={() => markAsRead(notif.id)}
+                    className="px-3 py-1 rounded-lg border border-[rgba(64,61,57,0.2)] bg-[#fbfaf6] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 text-xs font-semibold text-[#756f67] flex items-center gap-1 transition-all flex-shrink-0 cursor-pointer"
+                  >
+                    <Check size={12} /> Mark read
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <p className="mentor-info-note">
-        This is a read-only view — replying from the mentor portal isn't available yet.
-      </p>
     </MentorShell>
   );
 }

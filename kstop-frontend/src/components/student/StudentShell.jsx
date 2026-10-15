@@ -1,88 +1,59 @@
-import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import { Home, Plus, FileText, QrCode, Utensils, AlertCircle } from "../Icons";
 
-const MENU_ITEMS = [
-  { label: "Home", path: "/dashboard/student" },
-  { label: "Apply for Leave", path: "/dashboard/student/new-leave" },
-  { label: "My Leaves", path: "/dashboard/student/leaves" },
-  { label: "Mess Menu", path: "/dashboard/student/mess-menu" },
-  { label: "Grievance", path: "/dashboard/student/grievances" },
+const STUDENT_NAV = [
+  { label: "Dashboard", path: "/dashboard/student", icon: Home, end: true },
+  { label: "Gate Pass", path: "/dashboard/student/gate-pass", icon: QrCode },
+  { label: "Apply for Leave", path: "/dashboard/student/new-leave", icon: Plus },
+  { label: "My Leaves", path: "/dashboard/student/leaves", icon: FileText },
+  { label: "Mess Menu", path: "/dashboard/student/mess-menu", icon: Utensils },
+  { label: "Grievances", path: "/dashboard/student/grievances", icon: AlertCircle },
 ];
 
-export default function StudentShell({ title, backTo, children }) {
+export default function StudentShell({
+  title = "Student Dashboard",
+  subtitle,
+  backTo,
+  actionButton,
+  children,
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout } = useAuthContext();
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 900px)");
-    function syncViewport(event) {
-      setIsMobile(event.matches);
-      setIsSidebarOpen(false);
-    }
-    syncViewport(mediaQuery);
-    mediaQuery.addEventListener("change", syncViewport);
-    return () => mediaQuery.removeEventListener("change", syncViewport);
-  }, []);
-
-  function closeSidebar() { setIsSidebarOpen(false); }
-  function toggleSidebar() { setIsSidebarOpen((current) => !current); }
-  function handleLogout() { logout(); navigate("/login"); }
-
-  const name = user?.name || "Student";
-  const hostelLabel = user?.hostel?.name || user?.hostelName || "";
-  const showBack = Boolean(backTo);
-  const currentPath = location.pathname;
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
 
   return (
-    <div className="student-shell">
-      <div className="student-top-brand" aria-label="K-STOP brand"><span className="student-top-brand__name">K-STOP</span></div>
+    <div className="student-shell min-h-screen bg-[#fffcf2] text-[#252422] flex flex-col lg:pl-64">
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        roleTitle="Student Portal"
+        user={user}
+        navItems={STUDENT_NAV}
+        onLogout={handleLogout}
+      />
 
-      <button type="button" className={"student-menu-button" + (isSidebarOpen ? " is-open" : "")} onClick={toggleSidebar} aria-label="Open navigation menu">
-        <span /><span /><span />
-      </button>
-      <div className="student-sidebar-hover-zone" aria-hidden="true" />
+      {/* Top Navbar */}
+      <Navbar
+        title={title}
+        subtitle={subtitle || user?.hostelName || "Campus Life"}
+        backTo={backTo}
+        onNavigateBack={backTo ? () => navigate(backTo) : undefined}
+        onToggleSidebar={() => setSidebarOpen(true)}
+        actionButton={actionButton}
+      />
 
-      {isMobile && isSidebarOpen ? <button type="button" className="student-sidebar-overlay" onClick={closeSidebar} aria-label="Close navigation menu" /> : null}
-
-      <aside className={"student-sidebar" + (isSidebarOpen ? " is-open" : "") + (isMobile ? " is-mobile" : "")}>
-        <div className="student-sidebar__brand">
-          <strong>K-STOP</strong>
-          <span>Student Portal</span>
-          <p>Hi, {name}</p>
-        </div>
-
-        <nav className="student-sidebar__nav" aria-label="Student navigation">
-          {MENU_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/dashboard/student"}
-              className={({ isActive }) => {
-                const matchesNested = item.path !== "/dashboard/student" && currentPath.startsWith(item.path + "/");
-                return "student-sidebar__link" + (isActive || matchesNested ? " is-active" : "");
-              }}
-              onClick={isMobile ? closeSidebar : undefined}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <button type="button" className="student-sidebar__logout" onClick={handleLogout}>Log out</button>
-      </aside>
-
-      <main className="student-main">
-        <header className="student-header">
-          {showBack ? <button type="button" className="student-back-link" onClick={() => navigate(backTo)}>{"<- Home"}</button> : null}
-          <div className="student-header__copy">
-            <h1>{title}</h1>
-            {showBack && hostelLabel ? <p>{hostelLabel}</p> : null}
-          </div>
-        </header>
+      {/* Main Content Area */}
+      <main className="student-main flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {children}
       </main>
     </div>

@@ -9,22 +9,53 @@ export default function DevLogin() {
   const { login } = useAuthContext();
 
   function quickLoginAsHostel() {
-    login(DEV_TOKEN("hostel"), { id: "hostel-test-123", name: "Hostel KP-1", email: "kp1@kiit.ac.in", role: "hostel", hostelId: "hostel-1" });
+    login(DEV_TOKEN("hostel"), {
+      id: "hostel-test-123",
+      name: "Hostel KP-1",
+      email: "kp1@kiit.ac.in",
+      role: "hostel",
+      hostelId: "hostel-1",
+      assignedHostelId: "hostel-1",
+      assignedHostelName: "Hostel KP-1",
+      hostelName: "Hostel KP-1",
+    });
     navigate("/dashboard/hostel");
   }
 
   function quickLoginAsStudent() {
-    login(DEV_TOKEN("student"), { id: "student-test-123", name: "Asha Kumar", email: "asha.kumar@kiit.ac.in", role: "student", hostelId: "hostel-1" });
+    login(DEV_TOKEN("student"), {
+      id: "student-test-123",
+      name: "Asha Kumar",
+      email: "asha.kumar@kiit.ac.in",
+      role: "student",
+      rollNumber: "2205001",
+      hostelId: "hostel-1",
+      hostelName: "Hostel KP-1",
+      mentorName: "Dev Mentor",
+      attendancePercentage: 72,
+      academicDetails: "CGPA 8.1 · 0 backlogs · CSE Core",
+    });
     navigate("/dashboard/student");
   }
 
   function quickLoginAsParent() {
-    login(DEV_TOKEN("parent"), { id: "parent-test-123", name: "Parent User", email: "parent@example.com", role: "parent", childRollNumber: "2205001" });
+    login(DEV_TOKEN("parent"), {
+      id: "parent-test-123",
+      name: "Parent User",
+      email: "parent@example.com",
+      role: "parent",
+      childRollNumber: "2205001",
+    });
     navigate("/dashboard/parent");
   }
 
   function quickLoginAsMentor() {
-    login(DEV_TOKEN("mentor"), { id: "mentor-test-123", name: "Dev Mentor", email: "dev.mentor.fcs@kiit.ac.in", role: "mentor" });
+    login(DEV_TOKEN("mentor"), {
+      id: "mentor-test-123",
+      name: "Dev Mentor",
+      email: "dev.mentor.fcs@kiit.ac.in",
+      role: "mentor",
+    });
     navigate("/dashboard/mentor");
   }
 

@@ -1,1 +1,79 @@
-/* Tailwind directives + global styles */
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --ks-paper: #fffcf2;
+    --ks-paper-2: #f5f0e5;
+    --ks-ink: #252422;
+    --ks-ink-soft: #403d39;
+    --ks-muted: #756f67;
+    --ks-line: rgba(64, 61, 57, 0.14);
+    --ks-line-strong: rgba(64, 61, 57, 0.22);
+    --ks-orange: #eb5e28;
+    --ks-orange-dark: #c94a1b;
+    --ks-orange-soft: rgba(235, 94, 40, 0.10);
+    --ks-white: rgba(255, 255, 255, 0.78);
+    --ks-shadow: 0 24px 70px rgba(37, 36, 34, 0.10);
+    --ks-shadow-soft: 0 12px 34px rgba(37, 36, 34, 0.07);
+  }
+
+  html,
+  body {
+    min-height: 100vh;
+    background-color: var(--ks-paper);
+    color: var(--ks-ink);
+    font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background-color: rgba(235, 94, 40, 0.25);
+    color: #252422;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(64, 61, 57, 0.2);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(235, 94, 40, 0.5);
+}
+
+/* Print styling for Digital Gate Pass */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  nav,
+  aside,
+  header,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}

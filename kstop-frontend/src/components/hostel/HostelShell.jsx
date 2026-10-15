@@ -1,56 +1,64 @@
-import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import "../../page/dashboard/hostel/hostel-dashboard.css";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../../context/AuthContext";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import { Home, QrCode, FileText, Upload, Star, AlertCircle } from "../Icons";
 
-const NAV_LINKS = [
-  { to: "/dashboard/hostel", label: "Dashboard", end: true },
-  { to: "/dashboard/hostel/mess-menu", label: "Upload Menu" },
-  { to: "/dashboard/hostel/mess-feedback", label: "Mess Feedback" },
-  { to: "/dashboard/hostel/scan-qr", label: "Scan QR" },
-  { to: "/dashboard/hostel/leave-records", label: "Leave Records" },
-  { to: "/dashboard/hostel/grievances", label: "Grievances" },
+const HOSTEL_NAV = [
+  { label: "Dashboard", path: "/dashboard/hostel", icon: Home, end: true },
+  { label: "Gate QR Scanner", path: "/dashboard/hostel/scan-qr", icon: QrCode },
+  { label: "Leave Records", path: "/dashboard/hostel/leave-records", icon: FileText },
+  { label: "Mess Menu", path: "/dashboard/hostel/mess-menu", icon: Upload },
+  { label: "Mess Feedback", path: "/dashboard/hostel/mess-feedback", icon: Star },
+  { label: "Grievances", path: "/dashboard/hostel/grievances", icon: AlertCircle },
 ];
 
-export default function HostelShell({ title, eyebrow, children }) {
+export default function HostelShell({
+  title = "Hostel Dashboard",
+  eyebrow,
+  backTo,
+  actionButton,
+  children,
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuthContext();
 
-  function logout() {
-    localStorage.removeItem("kstop_token");
-    localStorage.removeItem("kstop_user");
+  function handleLogout() {
+    logout();
     navigate("/login");
   }
 
+  const enrichedUser = user
+    ? {
+        ...user,
+        hostelName:
+          user.assignedHostelName || user.hostelName || user.name || "Campus Hostel",
+      }
+    : null;
+
   return (
-    <div className="hostel-shell">
-      <button type="button" className={"hostel-menu-toggle" + (sidebarOpen ? " is-open" : "")} aria-label="Open menu" onClick={() => setSidebarOpen((current) => !current)}>
-        <span /><span /><span />
-      </button>
-      <div className="hostel-sidebar-hover-zone" aria-hidden="true" />
+    <div className="hostel-shell min-h-screen bg-[#fffcf2] text-[#252422] flex flex-col lg:pl-64">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        roleTitle="Hostel Portal"
+        user={enrichedUser}
+        navItems={HOSTEL_NAV}
+        onLogout={handleLogout}
+      />
 
-      <nav className={"hostel-sidebar" + (sidebarOpen ? " is-open" : "")}>
-        <div className="hostel-sidebar__brand">
-          <strong>K-STOP</strong>
-          <span>Hostel Portal</span>
-        </div>
+      <Navbar
+        title={title}
+        subtitle={eyebrow || enrichedUser?.hostelName || "Operations Console"}
+        backTo={backTo}
+        onNavigateBack={backTo ? () => navigate(backTo) : undefined}
+        onToggleSidebar={() => setSidebarOpen(true)}
+        actionButton={actionButton}
+      />
 
-        <div className="hostel-sidebar__nav">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => "hostel-sidebar__link" + (isActive ? " is-active" : "")} onClick={() => setSidebarOpen(false)}>
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <button type="button" className="hostel-sidebar__logout" onClick={logout}>Log out</button>
-      </nav>
-
-      {sidebarOpen ? <button type="button" className="hostel-sidebar-overlay" aria-label="Close menu" onClick={() => setSidebarOpen(false)} /> : null}
-
-      <main className="hostel-main">
-        <header className="hostel-header">
-          <div>{eyebrow ? <p>{eyebrow}</p> : null}<h1>{title}</h1></div>
-        </header>
+      <main className="hostel-main flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {children}
       </main>
     </div>

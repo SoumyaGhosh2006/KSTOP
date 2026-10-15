@@ -1,16 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ParentShell from "../../../components/parent/ParentShell";
+import Badge from "../../../components/Badge";
+import Tabs from "../../../components/Tabs";
+import SkeletonLoader from "../../../components/SkeletonLoader";
+import EmptyState from "../../../components/EmptyState";
 import api from "../../../utils/api";
-import "./parent-dashboard.css";
-
-function formatDate(dateStr) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { formatDate } from "../../../utils/formatDate";
+import { AlertCircle, CheckCircle2, Shield, Building, User } from "../../../components/Icons";
 
 export default function ParentGrievances() {
   const [grievances, setGrievances] = useState([]);
@@ -21,6 +17,8 @@ export default function ParentGrievances() {
   useEffect(() => {
     async function loadGrievances() {
       try {
+        setLoading(true);
+        setError("");
         const response = await api.get("/parent/grievances", { params: { view } });
         setGrievances(response.data.grievances || []);
       } catch (err) {
@@ -33,86 +31,104 @@ export default function ParentGrievances() {
     loadGrievances();
   }, [view]);
 
+  function getStatusBadge(item) {
+    switch (item.resolutionStatus) {
+      case "RESOLVED":
+        return <Badge variant="approved" dot>Resolved</Badge>;
+      case "CLASHED":
+        return <Badge variant="clashed" dot>Disputed</Badge>;
+      case "UNRESOLVED":
+        return <Badge variant="rejected" dot>Unresolved</Badge>;
+      default:
+        return <Badge variant="progress" dot>In Progress</Badge>;
+    }
+  }
+
   return (
-    <ParentShell title="Grievances" eyebrow="Linked student only" backTo="/dashboard/parent">
-      {loading ? (
-        <section className="parent-surface parent-panel-card">
-          <p style={{ color: "#8c857c" }}>Loading grievances...</p>
-        </section>
-      ) : null}
+    <ParentShell
+      title="Student Grievances"
+      eyebrow="Linked Student Monitoring"
+      backTo="/dashboard/parent"
+    >
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Tabs
+            tabs={[
+              { id: "active", label: "Active Grievances" },
+              { id: "recent", label: "Recently Resolved (30d)" },
+              { id: "history", label: "Full History" },
+            ]}
+            activeTab={view}
+            onChange={setView}
+          />
+        </div>
 
-      {error ? (
-        <section className="parent-surface parent-panel-card">
-          <p style={{ color: "#c84b3f" }}>{error}</p>
-        </section>
-      ) : null}
-
-      {!loading && !error ? (
-        <>
-          <div className="parent-filter-row">
-            {[
-              ["active", "Active"],
-              ["recent", "Recently Resolved"],
-              ["history", "History"],
-            ].map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                className={`parent-filter-pill${view === key ? " is-active" : ""}`}
-                onClick={() => setView(key)}
+        {loading ? (
+          <SkeletonLoader type="card" count={2} />
+        ) : error ? (
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            {error}
+          </div>
+        ) : grievances.length === 0 ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title={view === "active" ? "No active grievances" : "No records in this category"}
+            description="Your child has no open maintenance or hostel grievances in this view."
+          />
+        ) : (
+          <div className="space-y-4">
+            {grievances.map((g) => (
+              <div
+                key={g.id}
+                className="bg-white rounded-2xl border border-[rgba(64,61,57,0.14)] p-5 sm:p-6 shadow-sm space-y-3.5 hover:shadow-md transition-all"
               >
-                {label}
-              </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[rgba(64,61,57,0.08)]">
+                  <div>
+                    <h4 className="text-base font-bold text-[#252422] m-0">{g.title}</h4>
+                    <span className="text-xs text-[#756f67] block mt-0.5">
+                      {g.category} Category · Filed on {formatDate(g.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-black/5 text-[#403d39]">
+                      Priority {g.priorityScore ?? "—"}/100
+                    </span>
+                    {getStatusBadge(g)}
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#403d39] leading-relaxed m-0">
+                  {g.description}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#fbfaf6] border border-[rgba(64,61,57,0.08)] text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[#756f67] block">Hostel Action</span>
+                    <strong className="text-xs block mt-0.5">
+                      {g.staffStatus === "RESOLVED" ? "Resolved by Hostel ✓" : "Pending Staff Action"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[#756f67] block">Student Confirmation</span>
+                    <strong className="text-xs block mt-0.5">
+                      {g.studentStatus === "CONFIRMED"
+                        ? "Confirmed by Student ✓"
+                        : g.studentStatus === "DISPUTED"
+                        ? "Disputed by Student ✗"
+                        : "Awaiting Student Review"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs text-[#756f67] pt-1">
+                  <span>Hostel: <strong className="text-[#252422]">{g.hostel?.name || "Campus Hostel"}</strong></span>
+                  <span>Mentor: <strong className="text-[#252422]">{g.mentor?.name || "Faculty Mentor"}</strong></span>
+                </div>
+              </div>
             ))}
           </div>
-
-          {grievances.length === 0 ? (
-            <section className="parent-surface parent-panel-card">
-              <h3>Nothing here</h3>
-              <p style={{ color: "#8c857c" }}>
-                No grievances are in this view.
-              </p>
-            </section>
-          ) : null}
-
-          {grievances.length > 0 ? (
-        <div className="parent-dashboard-stack">
-          {grievances.map((grievance) => (
-            <article key={grievance.id} className="parent-surface parent-panel-card">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>{grievance.title}</h3>
-                  <p style={{ color: "#8c857c", margin: "6px 0 0" }}>
-                    {grievance.category} · {formatDate(grievance.createdAt)}
-                  </p>
-                </div>
-                <strong
-                  style={{
-                    color: grievance.resolutionStatus === "RESOLVED" ? "#2d8b53" : "#2f2924",
-                  }}
-                >
-                  {grievance.resolutionStatus?.replace("_", " ") || "In progress"}
-                </strong>
-              </div>
-
-              <p style={{ marginTop: "14px" }}>{grievance.description}</p>
-
-              <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", color: "#8c857c", fontSize: "14px" }}>
-                <span>Priority: {grievance.priorityScore}/100</span>
-                <span>Hostel: {grievance.hostel?.name || "—"}</span>
-                <span>Mentor: {grievance.mentor?.name || "—"}</span>
-              </div>
-              {view !== "active" && grievance.resolvedAt ? (
-                <p style={{ color: "#8c857c", marginTop: "10px" }}>
-                  Resolved on {formatDate(grievance.resolvedAt)}
-                </p>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      ) : null}
-        </>
-      ) : null}
+        )}
+      </div>
     </ParentShell>
   );
 }

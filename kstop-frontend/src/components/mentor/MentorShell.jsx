@@ -1,106 +1,87 @@
-import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../context/AuthContext";
 import api from "../../utils/api";
-import "../../page/dashboard/mentor/mentor-dashboard.css";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import { Home, Clock, Users, AlertCircle, MessageSquare, Bell, Send, FileText } from "../Icons";
 
-const MENU_ITEMS = [
-  { label: "Home", path: "/dashboard/mentor" },
-  { label: "Leave Queue", path: "/dashboard/mentor/leave-queue" },
-  { label: "My Mentees", path: "/dashboard/mentor/mentees" },
-  { label: "Grievances", path: "/dashboard/mentor/grievances" },
-  { label: "Messages", path: "/dashboard/mentor/messages" },
-  { label: "Notifications", path: "/dashboard/mentor/notifications" },
-];
-
-export default function MentorShell({ title, backTo, children }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuthContext();
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default function MentorShell({
+  title = "Mentor Dashboard",
+  subtitle,
+  backTo,
+  actionButton,
+  children,
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
+  const { user, logout } = useAuthContext();
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 900px)");
-    function syncViewport(event) { setIsMobile(event.matches); setIsSidebarOpen(false); }
-    syncViewport(mediaQuery);
-    mediaQuery.addEventListener("change", syncViewport);
-    return () => mediaQuery.removeEventListener("change", syncViewport);
-  }, []);
-
-  useEffect(() => {
+    let mounted = true;
     async function fetchUnread() {
       try {
         const res = await api.get("/mentor/notifications");
-        setUnreadCount(res.data.unreadCount || 0);
-      } catch {}
+        if (mounted) {
+          setUnreadCount(res.data.unreadCount || 0);
+        }
+      } catch {
+        // silent fallback
+      }
     }
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
-  function toggleSidebar() { setIsSidebarOpen((current) => !current); }
-  function closeSidebar() { setIsSidebarOpen(false); }
-  function handleLogout() { logout(); navigate("/login"); }
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
 
-  const name = user?.name || "Mentor";
-  const showBack = Boolean(backTo);
-  const currentPath = location.pathname;
+  const navItems = [
+    { label: "Dashboard", path: "/dashboard/mentor", icon: Home, end: true },
+    { label: "Leave Queue", path: "/dashboard/mentor/leave-queue", icon: Clock },
+    { label: "My Mentees", path: "/dashboard/mentor/mentees", icon: Users },
+    { label: "Counseling Log", path: "/dashboard/mentor/counseling", icon: FileText },
+    { label: "Grievances", path: "/dashboard/mentor/grievances", icon: AlertCircle },
+    { label: "Parent Messages", path: "/dashboard/mentor/messages", icon: MessageSquare },
+    { label: "Announcements", path: "/dashboard/mentor/announcements", icon: Send },
+    {
+      label: "Notifications",
+      path: "/dashboard/mentor/notifications",
+      icon: Bell,
+      count: unreadCount,
+    },
+  ];
 
   return (
-    <div className="mentor-shell">
-      <div className="mentor-top-brand" aria-label="K-STOP brand"><span className="mentor-top-brand__name">K-STOP</span></div>
+    <div className="mentor-shell min-h-screen bg-[#fffcf2] text-[#252422] flex flex-col lg:pl-64">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        roleTitle="Mentor Portal"
+        user={user}
+        navItems={navItems}
+        onLogout={handleLogout}
+      />
 
-      <button type="button" className={"mentor-menu-button" + (isSidebarOpen ? " is-open" : "")} onClick={toggleSidebar} aria-label="Open navigation menu">
-        <span /><span /><span />
-      </button>
-      <div className="mentor-sidebar-hover-zone" aria-hidden="true" />
+      <Navbar
+        title={title}
+        subtitle={subtitle || "Faculty Command Center"}
+        backTo={backTo}
+        onNavigateBack={backTo ? () => navigate(backTo) : undefined}
+        onToggleSidebar={() => setSidebarOpen(true)}
+        notificationCount={unreadCount}
+        onNotificationClick={() => navigate("/dashboard/mentor/notifications")}
+        actionButton={actionButton}
+      />
 
-      {isMobile && isSidebarOpen ? <button type="button" className="mentor-sidebar-overlay" onClick={closeSidebar} aria-label="Close navigation menu" /> : null}
-
-      <aside className={"mentor-sidebar" + (isSidebarOpen ? " is-open" : "")}>
-        <div className="mentor-sidebar__brand">
-          <strong>K-STOP</strong>
-          <span>Mentor Portal</span>
-          <p>Hi, {name}</p>
-        </div>
-
-        <nav className="mentor-sidebar__nav" aria-label="Mentor navigation">
-          {MENU_ITEMS.map((item) => {
-            const isNotifLink = item.path === "/dashboard/mentor/notifications";
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === "/dashboard/mentor"}
-                className={({ isActive }) => {
-                  const matchesNested = item.path !== "/dashboard/mentor" && currentPath.startsWith(item.path + "/");
-                  return "mentor-sidebar__link" + (isActive || matchesNested ? " is-active" : "");
-                }}
-                onClick={isMobile ? closeSidebar : undefined}
-              >
-                <span>{item.label}</span>
-                {isNotifLink && unreadCount > 0 ? <span className="mentor-nav-badge">{unreadCount}</span> : null}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <button type="button" className="mentor-sidebar__logout" onClick={handleLogout}>Log out</button>
-      </aside>
-
-      <main className="mentor-main">
-        <header className="mentor-header">
-          <div className="mentor-header__copy">
-            {showBack ? <button type="button" className="mentor-back-link" onClick={() => navigate(backTo)}>{"<- Home"}</button> : null}
-            <h1>{title}</h1>
-          </div>
-          <button type="button" className="mentor-notif-bell" onClick={() => navigate("/dashboard/mentor/notifications")} aria-label="Notifications">
-            🔔{unreadCount > 0 ? <span className="mentor-notif-badge">{unreadCount}</span> : null}
-          </button>
-        </header>
+      <main className="mentor-main flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {children}
       </main>
     </div>

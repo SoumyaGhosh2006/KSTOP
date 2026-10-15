@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+
+# AI Agents, Windsurf, Claude & IDE metadata
+.agents/
+**/.agents/
+.claude/
+**/.claude/
+agent/
+**/agent/
+.windsurf/
+**/.windsurf/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Environment variables
+.env
+.env*.local
+
+# System & log files
+.DS_Store
+Thumbs.db
+*.log
